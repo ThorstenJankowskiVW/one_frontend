@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="de" data-gui-brand="vwgroup">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>One Frontend Demonstrator</title>
+  <script>
+    (() => {
+      const storedMode = localStorage.getItem('onefe-color-mode');
+      const mode = storedMode || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      if (mode === 'dark') {
+        document.documentElement.setAttribute('data-gui-mode', 'dark');
+      } else {
+        document.documentElement.removeAttribute('data-gui-mode');
+      }
+      document.documentElement.style.colorScheme = mode;
+    })();
+  </script>
+  <link rel="stylesheet" href="./node_modules/@group-ui/group-ui/dist/group-ui/assets/themes/tokens.css">
+  <link rel="stylesheet" href="./node_modules/@group-ui/group-ui-css-framework/dist/groupui.css">
+  <link rel="stylesheet" href="./styles.css?v=linked-shell-context-2">
+</head>
+
+<body class="g-font">
+  <div id="app"></div>
+
+  <dialog id="process-modal" class="g-modal g-modal-centered">
+    <div id="process-modal-body"></div>
+  </dialog>
+
+  <dialog id="calendar-modal" class="g-modal g-modal-calendar">
+    <div id="calendar-modal-body"></div>
+  </dialog>
+
+  <script type="module" src="./app.js?v=linked-shell-context-2"></script>
+</body>
+</html>

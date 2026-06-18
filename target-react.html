@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>React Target - Case Follow-Up</title>
+  <link rel="stylesheet" href="./node_modules/@group-ui/group-ui/dist/group-ui/assets/themes/tokens.css">
+  <link rel="stylesheet" href="./node_modules/@group-ui/group-ui-css-framework/dist/groupui.css">
+  <link rel="stylesheet" href="./styles.css">
+  <style>
+    .target-root { padding: 24px; max-width: 880px; margin: 24px auto; }
+    .proof-badge { background: #f3f4f6; padding: 8px 12px; border-radius: 6px; display:inline-block; margin-bottom:12px; }
+    .code-block { background:#0b1220; color:#e6eef8; padding:12px; border-radius:6px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace; white-space:pre-wrap; }
+  </style>
+</head>
+<body>
+  <div class="target-root">
+    <groupui-headline heading="h2">React Target App (Proof)</groupui-headline>
+    <div class="proof-badge">Runtime: <strong>React 18 (UMD)</strong></div>
+
+    <p>This page loads React from UMD bundles and renders a small proof component. It reads the serialized context from the URL and sends back a follow-up note via BroadcastChannel.</p>
+
+    <div id="root"></div>
+
+    <form id="followUpForm" class="modal-form" style="margin-top:16px;">
+      <label>
+        <span>Follow-up note (React)</span>
+        <input type="text" name="note" placeholder="Message back to React shell" />
+      </label>
+      <groupui-button type="submit">Return to Host</groupui-button>
+      <p id="submitStatus" class="save-message" hidden></p>
+    </form>
+
+    <groupui-headline heading="h4">Proof: this is a React UMD page</groupui-headline>
+    <div class="code-block">&lt;!-- target-react.html --&gt;\nThis page uses React from a UMD build in the browser.</div>
+
+    <div style="margin-top:18px;"><groupui-button variant="secondary" id="closeBtn">Close window</groupui-button></div>
+  </div>
+
+  <script src="./node_modules/react/umd/react.development.js"></script>
+  <script src="./node_modules/react-dom/umd/react-dom.development.js"></script>
+  <script type="module">
+    function deserializeParam() {
+      const url = new URL(window.location.href);
+      const raw = url.searchParams.get('context');
+      if (!raw) return null;
+      try { return JSON.parse(decodeURIComponent(raw)); } catch(e) { return null; }
+    }
+
+    const context = deserializeParam();
+    const chName = 'onefe-channel-' + (context?.caseId || 'unknown');
+    const bc = new BroadcastChannel(chName);
+
+    function Proof() {
+      return React.createElement('div', null,
+        React.createElement('pre', { className: 'code-block' }, JSON.stringify(context, null, 2))
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(Proof));
+
+    document.getElementById('followUpForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const note = e.target.querySelector('input[name="note"]').value || 'no note';
+      bc.postMessage({ type: 'follow-up-return', note, from: 'react-target', context });
+      if (window.opener && window.opener.postMessage) {
+        window.opener.postMessage({ type: 'follow-up-return', note, from: 'react-target', context }, '*');
+      }
+      const status = document.getElementById('submitStatus');
+      if (status) {
+        status.textContent = 'Follow-up note sent to host: ' + note;
+        status.hidden = false;
+      }
+    });
+
+    document.getElementById('closeBtn').addEventListener('click', () => window.close());
+
+    bc.onmessage = (ev) => console.log('Message from host:', ev.data);
+  </script>
+</body>
+</html>

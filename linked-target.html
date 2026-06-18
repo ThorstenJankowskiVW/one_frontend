@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Angular App - Case Follow-Up</title>
+  <link rel="stylesheet" href="./node_modules/@group-ui/group-ui/dist/group-ui/assets/themes/tokens.css" />
+  <link rel="stylesheet" href="./node_modules/@group-ui/group-ui-css-framework/dist/groupui.css" />
+  <link rel="stylesheet" href="./linked-styles.css" />
+</head>
+<body data-theme="light">
+  <linked-target-root>
+    <main class="linked-page">
+      <section class="linked-hero linked-hero-target">
+        <div>
+          <groupui-tag>Angular App</groupui-tag>
+          <groupui-headline heading="h1">Target system opened</groupui-headline>
+          <p class="hero-lead">Loading Angular target application...</p>
+        </div>
+      </section>
+    </main>
+  </linked-target-root>
+
+  <script src="./node_modules/reflect-metadata/Reflect.js"></script>
+  <script src="./node_modules/tslib/tslib.js"></script>
+  <script src="./node_modules/zone.js/bundles/zone.umd.js"></script>
+  <script src="./node_modules/rxjs/dist/bundles/rxjs.umd.js"></script>
+  <script src="./node_modules/@angular/core/bundles/core.umd.js"></script>
+  <script src="./node_modules/@angular/common/bundles/common.umd.js"></script>
+  <script src="./node_modules/@angular/compiler/bundles/compiler.umd.js"></script>
+  <script src="./node_modules/@angular/platform-browser/bundles/platform-browser.umd.js"></script>
+  <script src="./node_modules/@angular/forms/bundles/forms.umd.js"></script>
+  <script src="./node_modules/@angular/platform-browser-dynamic/bundles/platform-browser-dynamic.umd.js"></script>
+  <script type="module" src="./linked-target.mjs"></script>
+</body>
+</html>

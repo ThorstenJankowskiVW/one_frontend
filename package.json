@@ -1,0 +1,36 @@
+{
+  "name": "one_frontend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "python3 -m http.server 4173",
+    "test": "node --check app.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@angular/common": "^12.2.17",
+    "@angular/compiler": "^12.2.17",
+    "@angular/core": "^12.2.17",
+    "@angular/forms": "^12.2.17",
+    "@angular/platform-browser": "^12.2.17",
+    "@angular/platform-browser-dynamic": "^12.2.17",
+    "@babel/cli": "^7.29.7",
+    "@babel/core": "^7.29.7",
+    "@babel/preset-env": "^7.29.7",
+    "@babel/preset-react": "^7.29.7",
+    "@group-ui/design-tokens-json": "https://groupui-design-tokens.vwapps.run/packages/releases/2.12.0/json/design-tokens-json.tgz",
+    "@group-ui/group-ui": "https://groupui.vwapps.run/latest/packages/group-ui.tgz",
+    "@group-ui/group-ui-css-framework": "https://groupui-css.vwapps.run/latest/groupui-css.tgz",
+    "puppeteer": "^25.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "reflect-metadata": "^0.1.14",
+    "rxjs": "^7.8.1",
+    "tslib": "^2.6.3",
+    "zone.js": "^0.11.8"
+  }
+}

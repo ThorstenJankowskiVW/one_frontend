@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Angular App - Calendar</title>
+  <link rel="stylesheet" href="./node_modules/@group-ui/group-ui/dist/group-ui/assets/themes/tokens.css" />
+  <link rel="stylesheet" href="./node_modules/@group-ui/group-ui-css-framework/dist/groupui.css" />
+  <link rel="stylesheet" href="./linked-styles.css" />
+  <link rel="stylesheet" href="./calendar-target.css?v=date-transfer-3" />
+</head>
+<body data-theme="light">
+  <calendar-target-root>
+    <main class="calendar-page">
+      <groupui-card padding="32px" class="calendar-hero">
+        <groupui-tag>Angular App</groupui-tag>
+        <groupui-headline heading="h1">Calendar loading...</groupui-headline>
+      </groupui-card>
+    </main>
+  </calendar-target-root>
+
+  <script src="./node_modules/reflect-metadata/Reflect.js"></script>
+  <script src="./node_modules/tslib/tslib.js"></script>
+  <script src="./node_modules/zone.js/bundles/zone.umd.js"></script>
+  <script src="./node_modules/rxjs/dist/bundles/rxjs.umd.js"></script>
+  <script src="./node_modules/@angular/core/bundles/core.umd.js"></script>
+  <script src="./node_modules/@angular/common/bundles/common.umd.js"></script>
+  <script src="./node_modules/@angular/compiler/bundles/compiler.umd.js"></script>
+  <script src="./node_modules/@angular/platform-browser/bundles/platform-browser.umd.js"></script>
+  <script src="./node_modules/@angular/platform-browser-dynamic/bundles/platform-browser-dynamic.umd.js"></script>
+  <script type="module" src="./calendar-target.mjs?v=date-transfer-3"></script>
+</body>
+</html>

@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Stencil / Web Components - Flight Extras</title>
+  <link rel="stylesheet" href="./node_modules/@group-ui/group-ui/dist/group-ui/assets/themes/tokens.css">
+  <link rel="stylesheet" href="./node_modules/@group-ui/group-ui-css-framework/dist/groupui.css">
+  <link rel="stylesheet" href="./styles.css?v=flight-extras-1">
+  <script type="module">
+    import { defineCustomElements } from './node_modules/@group-ui/group-ui/dist/loader/index.es2017.js';
+
+    defineCustomElements().catch((error) => {
+      console.error('GroupUI custom elements failed to load', error);
+    });
+  </script>
+  <style>
+    body {
+      margin: 0;
+      background: var(--onefe-bg);
+    }
+
+    flight-extras-remote {
+      display: block;
+    }
+
+    .extras-root {
+      display: grid;
+      gap: 20px;
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .extras-form {
+      display: grid;
+      gap: 18px;
+    }
+
+    .extras-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .extras-field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .extras-field span {
+      color: var(--onefe-muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .extras-checks {
+      display: grid;
+      gap: 12px;
+    }
+
+    .extras-summary {
+      display: grid;
+      gap: 12px;
+    }
+
+    @media (max-width: 760px) {
+      .extras-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body data-theme="light">
+  <flight-extras-remote></flight-extras-remote>
+
+  <script type="module">
+    function deserializeParam() {
+      const url = new URL(window.location.href);
+      const raw = url.searchParams.get('context');
+      if (!raw) return {};
+      try { return JSON.parse(decodeURIComponent(raw)); } catch (error) { return {}; }
+    }
+
+    const context = deserializeParam();
+    const initialExtras = context.flightBooking?.flightExtras || context.selectedFlightExtras || {};
+
+    const seatPrices = {
+      standard: 0,
+      window: 18,
+      extraLegroom: 42
+    };
+
+    const baggagePrices = {
+      cabin: 0,
+      checked: 35,
+      sports: 65
+    };
+
+    class FlightExtrasRemote extends HTMLElement {
+      constructor() {
+        super();
+        this.state = {
+          seat: initialExtras.seatCode || 'window',
+          baggage: initialExtras.baggageCode || 'checked',
+          priorityBoarding: initialExtras.priorityBoarding ?? true,
+          carbonOffset: initialExtras.carbonOffset ?? false
+        };
+
+        try {
+          this.channel = new BroadcastChannel('onefe-channel-' + (context.caseId || 'unknown'));
+        } catch (error) {
+          this.channel = null;
+        }
+      }
+
+      connectedCallback() {
+        this.render();
+        this.bindEvents();
+      }
+
+      get selectedExtras() {
+        const seatLabels = {
+          standard: 'Standardplatz',
+          window: 'Fensterplatz',
+          extraLegroom: 'Extra Beinfreiheit'
+        };
+
+        const baggageLabels = {
+          cabin: 'Nur Handgepäck',
+          checked: 'Aufgabegepäck 23 kg',
+          sports: 'Sportgepäck'
+        };
+
+        const priorityPrice = this.state.priorityBoarding ? 12 : 0;
+        const carbonPrice = this.state.carbonOffset ? 8 : 0;
+
+        return {
+          seatCode: this.state.seat,
+          seat: seatLabels[this.state.seat],
+          baggageCode: this.state.baggage,
+          baggage: baggageLabels[this.state.baggage],
+          priorityBoarding: this.state.priorityBoarding,
+          carbonOffset: this.state.carbonOffset,
+          totalPrice: seatPrices[this.state.seat] + baggagePrices[this.state.baggage] + priorityPrice + carbonPrice
+        };
+      }
+
+      updateState(partialState) {
+        this.state = {
+          ...this.state,
+          ...partialState
+        };
+        this.render();
+        this.bindEvents();
+      }
+
+      postPayload() {
+        const flightExtras = this.selectedExtras;
+        const payload = {
+          type: 'flight-extras-transfer',
+          from: 'stencil-flight-extras-target',
+          targetApp: 'react-shell',
+          note: `Extras übernommen: ${flightExtras.totalPrice} EUR`,
+          flightExtras,
+          context: {
+            ...context,
+            sourceStep: 'flight-extras-selected',
+            selectedFlightExtras: flightExtras
+          }
+        };
+
+        this.channel?.postMessage(payload);
+
+        if (window.opener && window.opener.postMessage) {
+          window.opener.postMessage(payload, '*');
+        }
+
+        if (window.parent && window.parent !== window && window.parent.postMessage) {
+          window.parent.postMessage(payload, '*');
+        }
+
+        const status = this.querySelector('#extrasStatus');
+        if (status) {
+          status.textContent = `Extras an Host übergeben: ${flightExtras.totalPrice} EUR`;
+          status.hidden = false;
+        }
+      }
+
+      bindEvents() {
+        this.querySelector('#seatSelect')?.addEventListener('change', (event) => {
+          this.updateState({ seat: event.target.value });
+        });
+
+        this.querySelector('#baggageSelect')?.addEventListener('change', (event) => {
+          this.updateState({ baggage: event.target.value });
+        });
+
+        this.querySelector('#priorityCheck')?.addEventListener('change', (event) => {
+          this.updateState({ priorityBoarding: event.target.checked });
+        });
+
+        this.querySelector('#carbonCheck')?.addEventListener('change', (event) => {
+          this.updateState({ carbonOffset: event.target.checked });
+        });
+
+        this.querySelector('#submitExtras')?.addEventListener('click', () => this.postPayload());
+      }
+
+      render() {
+        const extras = this.selectedExtras;
+
+        this.innerHTML = `
+          <main class="extras-root">
+            <groupui-card padding="24px">
+              <groupui-tag>Web Components / Stencil</groupui-tag>
+              <groupui-headline heading="h1">Reise-Extras auswählen</groupui-headline>
+              <groupui-text>
+                ${context.origin || 'Hannover'} → ${context.destination || 'Barcelona'} · ${context.departureDate || 'Datum offen'} · ${context.flightBooking?.flightOption?.label || 'Flugoption offen'}
+              </groupui-text>
+            </groupui-card>
+
+            <groupui-card padding="24px" class="extras-form">
+              <groupui-headline heading="h2">Zusatzleistungen</groupui-headline>
+              <groupui-text>Dieses Custom Element hält eigenen State und sendet die ausgewählten Extras als strukturierten Payload zurück.</groupui-text>
+
+              <div class="extras-grid">
+                <label class="extras-field">
+                  <span>Sitzplatz</span>
+                  <select id="seatSelect">
+                    <option value="standard" ${this.state.seat === 'standard' ? 'selected' : ''}>Standardplatz · 0 EUR</option>
+                    <option value="window" ${this.state.seat === 'window' ? 'selected' : ''}>Fensterplatz · 18 EUR</option>
+                    <option value="extraLegroom" ${this.state.seat === 'extraLegroom' ? 'selected' : ''}>Extra Beinfreiheit · 42 EUR</option>
+                  </select>
+                </label>
+
+                <label class="extras-field">
+                  <span>Gepäck</span>
+                  <select id="baggageSelect">
+                    <option value="cabin" ${this.state.baggage === 'cabin' ? 'selected' : ''}>Nur Handgepäck · 0 EUR</option>
+                    <option value="checked" ${this.state.baggage === 'checked' ? 'selected' : ''}>Aufgabegepäck 23 kg · 35 EUR</option>
+                    <option value="sports" ${this.state.baggage === 'sports' ? 'selected' : ''}>Sportgepäck · 65 EUR</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="extras-checks">
+                <label>
+                  <input id="priorityCheck" type="checkbox" ${this.state.priorityBoarding ? 'checked' : ''} />
+                  Priority Boarding · 12 EUR
+                </label>
+                <label>
+                  <input id="carbonCheck" type="checkbox" ${this.state.carbonOffset ? 'checked' : ''} />
+                  CO2-Ausgleich · 8 EUR
+                </label>
+              </div>
+
+              <div class="action-row">
+                <groupui-button type="button" id="submitExtras">Extras an Host zurückgeben</groupui-button>
+              </div>
+              <groupui-text id="extrasStatus" hidden></groupui-text>
+            </groupui-card>
+
+            <groupui-card padding="20px" class="extras-summary">
+              <groupui-tag>Aktuelle Extras</groupui-tag>
+              <groupui-headline heading="h3">${extras.totalPrice} EUR</groupui-headline>
+              <dl class="compact-list">
+                <div><dt>Sitzplatz</dt><dd>${extras.seat}</dd></div>
+                <div><dt>Gepäck</dt><dd>${extras.baggage}</dd></div>
+                <div><dt>Priority</dt><dd>${extras.priorityBoarding ? 'Ja' : 'Nein'}</dd></div>
+                <div><dt>CO2-Ausgleich</dt><dd>${extras.carbonOffset ? 'Ja' : 'Nein'}</dd></div>
+              </dl>
+            </groupui-card>
+
+            <groupui-card padding="20px">
+              <groupui-tag>Runtime Proof</groupui-tag>
+              <groupui-headline heading="h3">Custom Element</groupui-headline>
+              <groupui-text>Die sichtbare Anwendung wird von <code>&lt;flight-extras-remote&gt;</code> gerendert.</groupui-text>
+              <pre>${JSON.stringify(context, null, 2)}</pre>
+            </groupui-card>
+          </main>
+        `;
+      }
+    }
+
+    if (!customElements.get('flight-extras-remote')) {
+      customElements.define('flight-extras-remote', FlightExtrasRemote);
+    }
+  </script>
+</body>
+</html>

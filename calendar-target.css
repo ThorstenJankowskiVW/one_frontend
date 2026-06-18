@@ -1,0 +1,128 @@
+body {
+  background: var(--onefe-bg);
+}
+
+.calendar-page {
+  min-height: 100vh;
+  padding: 24px;
+  background: var(--onefe-bg);
+}
+
+.calendar-shell {
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.calendar-page groupui-card {
+  box-shadow: none;
+}
+
+.calendar-page groupui-card:hover {
+  box-shadow: none;
+}
+
+.calendar-hero {
+  display: block;
+  margin-bottom: 24px;
+}
+
+.date-selection-card {
+  display: block;
+  margin-bottom: 24px;
+}
+
+.calendar-header {
+  margin-bottom: 24px;
+}
+
+.calendar-picker {
+  margin-bottom: 24px;
+}
+
+.datepicker-actions {
+  margin-top: 12px;
+}
+
+.demo-date-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.calendar-summary {
+  display: block;
+  margin-bottom: 24px;
+}
+
+.appointment-transfer {
+  display: block;
+  margin-bottom: 24px;
+}
+
+.appointment-transfer groupui-text {
+  max-width: 760px;
+}
+
+.transfer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 18px;
+  margin-bottom: 12px;
+}
+
+.appointment-transfer pre {
+  margin-top: 16px;
+  max-height: 280px;
+  overflow: auto;
+}
+
+.transfer-hint {
+  color: #64748b;
+}
+
+.transfer-error {
+  display: block;
+  padding: 12px 14px;
+  border-radius: 4px;
+  color: #7a4d00;
+  background: #fff7e6;
+  font-weight: 700;
+}
+
+.angular-proof {
+  display: block;
+  margin-bottom: 24px;
+}
+
+.angular-proof groupui-text {
+  max-width: 760px;
+}
+
+.proof-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+  margin: 20px 0 0;
+}
+
+.proof-grid groupui-card {
+  display: block;
+  min-height: 88px;
+}
+
+.proof-grid dt {
+  margin-bottom: 8px;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.proof-grid dd {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1rem;
+  font-weight: 700;
+}

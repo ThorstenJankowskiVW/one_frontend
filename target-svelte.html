@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Svelte Remote - Flight Options</title>
+  <link rel="stylesheet" href="./node_modules/@group-ui/group-ui/dist/group-ui/assets/themes/tokens.css">
+  <link rel="stylesheet" href="./node_modules/@group-ui/group-ui-css-framework/dist/groupui.css">
+  <link rel="stylesheet" href="./styles.css?v=flight-options-5">
+  <script type="module">
+    import { defineCustomElements } from './node_modules/@group-ui/group-ui/dist/loader/index.es2017.js';
+
+    defineCustomElements().catch((error) => {
+      console.error('GroupUI custom elements failed to load', error);
+    });
+  </script>
+  <style>
+    body {
+      margin: 0;
+      background: var(--onefe-bg);
+    }
+
+    .svelte-flight-root {
+      display: grid;
+      gap: 20px;
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .svelte-option-panel {
+      display: grid;
+      gap: 18px;
+    }
+
+    .flight-option-group {
+      display: block;
+    }
+
+    .flight-radio-option {
+      padding: var(--groupui-sys-spacing-300);
+      border: var(--groupui-sys-border-width-s) solid var(--groupui-sys-color-line-weak);
+      border-radius: var(--groupui-sys-border-radius-s);
+      background: var(--groupui-sys-color-background-base);
+    }
+
+    .flight-radio-option[checked] {
+      border-color: var(--groupui-sys-color-action-basic-default);
+      background: var(--groupui-sys-color-action-subtle-default);
+    }
+
+    .option-line {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--groupui-sys-spacing-400);
+      font-weight: var(--groupui-sys-font-weight-bold);
+    }
+
+    .option-meta {
+      display: block;
+      color: var(--groupui-sys-color-text-weaker);
+      font-size: var(--groupui-sys-font-size-350);
+      line-height: var(--groupui-sys-line-height-xl);
+      margin-top: var(--groupui-sys-spacing-100);
+    }
+
+    .selected-summary {
+      display: grid;
+      gap: 12px;
+    }
+
+    .svelte-proof {
+      display: grid;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body data-theme="light">
+  <main class="svelte-flight-root">
+    <groupui-card padding="24px">
+      <groupui-tag>Svelte Remote</groupui-tag>
+      <groupui-headline heading="h1">Flugoption auswählen</groupui-headline>
+      <groupui-text id="routeText">Route wird geladen...</groupui-text>
+    </groupui-card>
+
+    <groupui-card padding="24px" class="svelte-option-panel">
+      <groupui-headline heading="h2">Verfügbare Flugoptionen</groupui-headline>
+      <groupui-text>Die Auswahl nutzt eine native GroupUI Radio Group. Genau eine Option kann aktiv sein.</groupui-text>
+      <form id="flightOptionForm"></form>
+      <div class="action-row right">
+        <groupui-button type="button" id="submitOption">Ausgewählte Flugoption übernehmen</groupui-button>
+      </div>
+    </groupui-card>
+
+    <groupui-card padding="20px" class="selected-summary">
+      <groupui-tag>Aktuelle Auswahl</groupui-tag>
+      <groupui-headline heading="h3" id="selectedHeadline">Auswahl wird geladen...</groupui-headline>
+      <groupui-text id="selectedDetails"></groupui-text>
+    </groupui-card>
+
+    <groupui-card padding="20px" class="svelte-proof">
+      <groupui-tag>Runtime Proof</groupui-tag>
+      <groupui-headline heading="h3">Svelte-Schritt im One-Frontend-Flow</groupui-headline>
+      <groupui-text>Diese Remote liest den Shell-Kontext, hält lokale Auswahl im eigenen State und sendet die Flugoption zurück.</groupui-text>
+      <pre id="contextView"></pre>
+    </groupui-card>
+  </main>
+
+  <script>
+    function deserializeParam() {
+      const url = new URL(window.location.href);
+      const raw = url.searchParams.get('context');
+      if (!raw) return null;
+      try { return JSON.parse(decodeURIComponent(raw)); } catch (error) { return null; }
+    }
+
+    const context = deserializeParam() || {};
+    const chName = 'onefe-channel-' + (context.caseId || 'unknown');
+    const bc = new BroadcastChannel(chName);
+    const options = [
+      {
+        id: 'direct-morning',
+        label: 'Direktflug morgens',
+        carrier: 'Demo Airlines',
+        duration: '2h 25m',
+        departure: '08:35',
+        arrival: '11:00',
+        price: 219
+      },
+      {
+        id: 'via-munich',
+        label: 'Via München',
+        carrier: 'One Frontend Air',
+        duration: '4h 10m',
+        departure: '10:15',
+        arrival: '14:25',
+        price: 179
+      },
+      {
+        id: 'evening-flex',
+        label: 'Flex-Tarif abends',
+        carrier: 'GroupUI Wings',
+        duration: '2h 35m',
+        departure: '18:40',
+        arrival: '21:15',
+        price: 289
+      }
+    ];
+
+    const initialOptionId =
+      context.selectedFlightOption?.id ||
+      context.flightOption?.id ||
+      context.flightBooking?.flightOption?.id ||
+      options[0].id;
+
+    let selectedOption = options.find((option) => option.id === initialOptionId) || options[0];
+
+    function postPayload(payload) {
+      bc.postMessage(payload);
+
+      if (window.opener && window.opener.postMessage) {
+        window.opener.postMessage(payload, '*');
+      }
+
+      if (window.parent && window.parent !== window && window.parent.postMessage) {
+        window.parent.postMessage(payload, '*');
+      }
+    }
+
+    function selectOption(optionId) {
+      selectedOption = options.find((option) => option.id === optionId) || options[0];
+      renderOptions();
+    }
+
+    function submitOption() {
+      const payload = {
+        type: 'flight-option-transfer',
+        from: 'svelte-flight-options-target',
+        targetApp: 'react-shell',
+        note: `Flugoption übernommen: ${selectedOption.label}`,
+        flightOption: selectedOption,
+        context: {
+          ...context,
+          sourceStep: 'flight-option-selected',
+          selectedFlightOption: selectedOption
+        }
+      };
+
+      postPayload(payload);
+    }
+
+    function renderOptions() {
+      const form = document.getElementById('flightOptionForm');
+      form.innerHTML = `
+        <groupui-radio-group
+          class="flight-option-group"
+          name="flight-option"
+          value="${selectedOption.id}"
+          required
+        >
+          ${options.map((option) => `
+            <groupui-radio-button
+              class="flight-radio-option"
+              value="${option.id}"
+              ${option.id === selectedOption.id ? 'checked' : ''}
+            >
+              <span class="option-line">
+                <span>${option.label}</span>
+                <span>${option.price} EUR</span>
+              </span>
+              <span class="option-meta">
+                ${option.carrier} · ${option.departure}-${option.arrival} · ${option.duration}
+              </span>
+            </groupui-radio-button>
+          `).join('')}
+        </groupui-radio-group>
+      `;
+
+      const radioGroup = form.querySelector('groupui-radio-group');
+      const handleGroupChange = () => {
+        selectOption(radioGroup.value);
+      };
+
+      radioGroup.addEventListener('groupuiChange', handleGroupChange);
+      radioGroup.addEventListener('change', handleGroupChange);
+
+      document.getElementById('selectedHeadline').textContent = selectedOption.label;
+      document.getElementById('selectedDetails').textContent =
+        `${selectedOption.carrier} · Abflug ${selectedOption.departure} · Ankunft ${selectedOption.arrival} · ${selectedOption.duration} · ${selectedOption.price} EUR`;
+
+      document.querySelectorAll('.flight-radio-option').forEach((radioButton) => {
+        radioButton.addEventListener('click', () => selectOption(radioButton.value));
+      });
+    }
+
+    document.getElementById('routeText').textContent =
+      `${context.origin || 'Hannover'} → ${context.destination || 'Barcelona'} · ${context.departureDate || 'Datum offen'} · ${context.passengers || 1} Reisende`;
+    document.getElementById('contextView').textContent = JSON.stringify(context, null, 2);
+    document.getElementById('submitOption').addEventListener('click', submitOption);
+    renderOptions();
+
+    document.addEventListener('click', (event) => {
+      const path = event.composedPath ? event.composedPath() : [event.target];
+      const radioTarget = path.find((item) => item?.tagName?.toLowerCase?.() === 'groupui-radio-button');
+
+      if (radioTarget) {
+        selectOption(radioTarget.value);
+      }
+    });
+  </script>
+</body>
+</html>
