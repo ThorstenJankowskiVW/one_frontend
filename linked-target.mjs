@@ -1,8 +1,6 @@
 import 'reflect-metadata';
 import 'zone.js';
 import { defineCustomElements } from '@group-ui/group-ui/dist/loader/index.es2017.js';
-import '@group-ui/group-ui/dist/group-ui/assets/themes/tokens.css';
-import '@group-ui/group-ui-css-framework/dist/groupui.css';
 import '@angular/compiler';
 import { BrowserModule } from '@angular/platform-browser';
 import { Component, NgModule } from '@angular/core';

@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>React Target - Case Follow-Up</title>
+  <link rel="stylesheet" href="./groupui-theme.css">
   <link rel="stylesheet" href="./styles.css">
   <style>
     .target-root { padding: 24px; max-width: 880px; margin: 24px auto; }
@@ -38,8 +39,6 @@
   <script type="module">
     import React from 'react';
     import ReactDOM from 'react-dom/client';
-    import '@group-ui/group-ui/dist/group-ui/assets/themes/tokens.css';
-    import '@group-ui/group-ui-css-framework/dist/groupui.css';
     import { defineCustomElements } from '@group-ui/group-ui/dist/loader/index.es2017.js';
 
     defineCustomElements().catch((error) => {

@@ -1,7 +1,5 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import '@group-ui/group-ui/dist/group-ui/assets/themes/tokens.css';
-import '@group-ui/group-ui-css-framework/dist/groupui.css';
 import { defineCustomElements } from '@group-ui/group-ui/dist/loader/index.es2017.js';
 import { createLinkedLaunchContext, linkedTransferPayload } from './linked-context.js';
 
