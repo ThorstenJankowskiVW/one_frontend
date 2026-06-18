@@ -1,4 +1,6 @@
-import { defineCustomElements } from './node_modules/@group-ui/group-ui/dist/loader/index.es2017.js';
+import '@group-ui/group-ui/dist/group-ui/assets/themes/tokens.css';
+import '@group-ui/group-ui-css-framework/dist/groupui.css';
+import { defineCustomElements } from '@group-ui/group-ui/dist/loader/index.es2017.js';
 import { createContext, integrationModes, serializeContext } from './packages/context-model/src/context.js';
 import { demoCase, initialContexts, journeySteps, targetPictures } from './packages/demo-data/src/cases.js';
 import { createContextEventBridge, createEventLog, createModalTrigger, createNavigationTrigger, recordEvent } from './packages/integration-layer/src/integration.js';
@@ -140,15 +142,15 @@ const groupUiComponentTags = [
 const groupUiAssets = [
   {
     label: 'Web Components Loader',
-    path: './node_modules/@group-ui/group-ui/dist/loader/index.es2017.js'
+    status: 'bundled'
   },
   {
     label: 'CSS Framework',
-    path: './node_modules/@group-ui/group-ui-css-framework/dist/groupui.css'
+    status: 'bundled'
   },
   {
     label: 'Theme Tokens',
-    path: './node_modules/@group-ui/group-ui/dist/group-ui/assets/themes/tokens.css'
+    status: 'bundled'
   }
 ];
 
@@ -158,7 +160,7 @@ const isolatedFlightBookingPages = {
     title: 'Angular Kalender isoliert',
     description: 'Der Kalender läuft hier ohne übergebenen Journey-Kontext. Die Seite dient nur zur Ansicht der Angular-App.',
     target: 'calendar-target.html?v=isolated-angular-1',
-    technology: 'Angular UMD + GroupUI Date Picker'
+    technology: 'Angular 20 + GroupUI Date Picker'
   },
   'flight-booking-svelte': {
     eyebrow: 'Isolierte Einzelseite · Svelte',
@@ -179,7 +181,7 @@ const isolatedFlightBookingPages = {
     title: 'Web-Components-Ziel isoliert',
     description: 'Die Web-Components-Zielseite läuft ohne Journey-Kontext und ist als einzelner Technologiebaustein sichtbar.',
     target: `target-stencil.html?v=${flightExtrasTargetVersion}`,
-    technology: 'Stencil / Web Components'
+    technology: 'Native Web Component · Stencil-style'
   }
 };
 
@@ -199,20 +201,7 @@ function collectGroupUiComponentStatus() {
 
 async function updateGroupUiRuntimeStatus() {
   const components = collectGroupUiComponentStatus();
-  const assets = await Promise.all(groupUiAssets.map(async (asset) => {
-    try {
-      const response = await fetch(asset.path, { cache: 'no-store' });
-      return {
-        ...asset,
-        status: response.ok ? 'ok' : `http-${response.status}`
-      };
-    } catch (error) {
-      return {
-        ...asset,
-        status: 'error'
-      };
-    }
-  }));
+  const assets = groupUiAssets;
 
   const nextRuntime = { components, assets };
   if (JSON.stringify(state.groupUiRuntime) !== JSON.stringify(nextRuntime)) {
@@ -329,12 +318,12 @@ function renderGroupUiRuntimeCard() {
   const registeredCount = components.filter((component) => component.registered).length;
   const assets = state.groupUiRuntime.assets.length
     ? state.groupUiRuntime.assets
-    : groupUiAssets.map((asset) => ({ ...asset, status: 'pending' }));
+    : groupUiAssets;
 
   return groupuiCard(`
     <groupui-tag>GroupUI Runtime</groupui-tag>
     <groupui-headline heading="h3">Echte GroupUI-Nutzung</groupui-headline>
-    <groupui-text>${registeredCount}/${components.length} Web Components sind im Browser registriert. Lokale Assets werden aus node_modules geladen.</groupui-text>
+    <groupui-text>${registeredCount}/${components.length} Web Components sind im Browser registriert. Loader, CSS Framework und Theme Tokens sind im Vite-Build gebündelt.</groupui-text>
     <groupui-grid type="fluid" margin-type="custom" margin="0" gutter="16px" class="runtime-checks">
       <groupui-grid-row>
       ${components.map((component) => `
@@ -806,12 +795,12 @@ function renderFlightBooking() {
       `, 'flight-option-return-card') : ''}
 
       ${state.flightBooking.flightOption && (!state.flightBooking.flightExtras || state.flightBooking.currentStep === 4) ? groupuiCard(`
-        <groupui-tag>Schritt 4 · Web Components / Stencil</groupui-tag>
+        <groupui-tag>Schritt 4 · Native Web Component</groupui-tag>
         <groupui-headline heading="h3">Reise-Extras auswählen</groupui-headline>
         <groupui-text>Die Extras werden in einer eigenständigen Web-Components-Ziel-App bedient. Die React Shell bettet sie als iframe ein.</groupui-text>
         <iframe
           class="embedded-stencil-frame"
-          title="Stencil Flight Extras Embedded"
+          title="Web Component Flight Extras Embedded"
           src="${embeddedFlightExtrasUrl}"
         ></iframe>
       `, 'embedded-flight-extras-card') : ''}
@@ -819,7 +808,7 @@ function renderFlightBooking() {
       ${state.flightBooking.flightExtras && state.flightBooking.currentStep !== 4 ? groupuiCard(`
         <groupui-tag>Von Web Components zurückgegeben</groupui-tag>
         <groupui-headline heading="h3">Extras übernommen</groupui-headline>
-        <groupui-text>Die Stencil/Web-Components-App hat die Zusatzleistungen an die React Shell zurückgegeben.</groupui-text>
+        <groupui-text>Die Web-Component-App hat die Zusatzleistungen an die React Shell zurückgegeben.</groupui-text>
         <dl class="compact-list">
           <div><dt>Sitzplatz</dt><dd>${state.flightBooking.flightExtras.seat}</dd></div>
           <div><dt>Gepäck</dt><dd>${state.flightBooking.flightExtras.baggage}</dd></div>
@@ -1182,7 +1171,7 @@ function renderPatterns() {
         <groupui-button type="button" data-action="new-tab-angular">Open New Tab: Angular Target</groupui-button>
         <groupui-button type="button" data-action="new-tab-calendar">Open New Tab: Angular Calendar</groupui-button>
         <groupui-button type="button" data-action="new-tab-svelte">Open New Tab: Svelte Target</groupui-button>
-        <groupui-button type="button" data-action="new-tab-stencil">Open New Tab: Stencil Target</groupui-button>
+        <groupui-button type="button" data-action="new-tab-stencil">Open New Tab: Web Component Target</groupui-button>
       </div>
       <div class="inline-step">
         <groupui-headline heading="h3">Inline-Prozessschritt</groupui-headline>
@@ -1326,7 +1315,8 @@ function linkedLaunchContext() {
 }
 
 function openFlightCalendarModal(context) {
-  const url = `${window.location.origin}/calendar-target.html?context=${serializeContext(context)}&v=date-transfer-3`;
+  const base = import.meta.env.BASE_URL;
+  const url = `${window.location.origin}${base}calendar-target.html?context=${serializeContext(context)}&v=date-transfer-3`;
 
   calendarModalBody.innerHTML = `
     <div class="calendar-modal-shell">
@@ -1351,11 +1341,13 @@ function openFlightCalendarModal(context) {
 }
 
 function createFlightOptionsTargetUrl(context) {
-  return `${window.location.origin}/target-svelte.html?context=${serializeContext(context)}&v=${flightOptionsTargetVersion}`;
+  const base = import.meta.env.BASE_URL;
+  return `${window.location.origin}${base}target-svelte.html?context=${serializeContext(context)}&v=${flightOptionsTargetVersion}`;
 }
 
 function createFlightExtrasTargetUrl(context) {
-  return `${window.location.origin}/target-stencil.html?context=${serializeContext(context)}&v=${flightExtrasTargetVersion}`;
+  const base = import.meta.env.BASE_URL;
+  return `${window.location.origin}${base}target-stencil.html?context=${serializeContext(context)}&v=${flightExtrasTargetVersion}`;
 }
 
 function openFlightOptionsModal(context) {
@@ -1390,7 +1382,7 @@ function openFlightExtrasModal(context) {
     <div class="calendar-modal-shell">
       <div class="calendar-modal-header">
         <div>
-          <groupui-tag>Schritt 4 · Web Components / Stencil</groupui-tag>
+          <groupui-tag>Schritt 4 · Native Web Component</groupui-tag>
           <groupui-headline heading="h3">Reise-Extras ändern</groupui-headline>
           <groupui-text>Die Web-Components-Ziel-App läuft im iframe und gibt die Extras an die React Shell zurück.</groupui-text>
         </div>
@@ -1398,7 +1390,7 @@ function openFlightExtrasModal(context) {
       </div>
       <iframe
         class="calendar-modal-frame"
-        title="Stencil Flight Extras App"
+        title="Web Component Flight Extras App"
         src="${url}"
       ></iframe>
     </div>
@@ -1501,7 +1493,8 @@ function handleAction(action, sourceElement) {
     if (action === 'new-tab-calendar') targetPage = 'calendar-target.html';
     if (action === 'new-tab-svelte') targetPage = 'target-svelte.html';
     if (action === 'new-tab-stencil') targetPage = 'target-stencil.html';
-    const url = `${window.location.origin}/${targetPage}?context=${serialized}`;
+    const base = import.meta.env.BASE_URL;
+    const url = `${window.location.origin}${base}${targetPage}?context=${serialized}`;
     recordEvent(state.eventLog, 'open-new-tab', { url, context, target: targetPage });
     window.open(url, '_blank');
   }

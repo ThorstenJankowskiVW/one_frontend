@@ -1,83 +1,134 @@
 const puppeteer = require('puppeteer');
 
+const BASE_URL = (process.env.BASE_URL || 'http://127.0.0.1:4173/one_frontend/').replace(/\/?$/, '/');
+const context = encodeURIComponent(JSON.stringify({
+  caseId: 'CASE-E2E',
+  origin: 'Hannover',
+  destination: 'Barcelona',
+  departureDate: '2026-06-18',
+  passengers: 2
+}));
+
+async function assertPage(page, path, expectedTitle, expectedText) {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text());
+  });
+
+  const response = await page.goto(`${BASE_URL}${path}`, { waitUntil: 'networkidle2' });
+  if (!response?.ok()) {
+    throw new Error(`${path} returned HTTP ${response?.status()}`);
+  }
+
+  await page.waitForFunction(
+    (text) => document.body.innerText.includes(text),
+    { timeout: 30000 },
+    expectedText
+  );
+
+  const title = await page.title();
+  if (title !== expectedTitle) {
+    throw new Error(`${path} rendered "${title}" instead of "${expectedTitle}"`);
+  }
+
+  if (errors.length) {
+    throw new Error(`${path} logged browser errors:\n${errors.join('\n')}`);
+  }
+}
+
 (async () => {
-  const HOME = 'http://localhost:4173/';
-  const NOTE = 'E2E test note ' + Date.now();
-
-  const browser = await puppeteer.launch({ headless: true, args: ['--disable-dev-shm-usage'] });
-  const page = await browser.newPage();
-  page.setDefaultTimeout(30000);
-  page.on('dialog', async (dialog) => {
-    console.log('Dismiss dialog on host:', dialog.message());
-    await dialog.dismiss();
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: [
+      '--disable-dev-shm-usage',
+      '--no-sandbox',
+      '--disable-setuid-sandbox'
+    ]
   });
 
-  console.log('Opening demo page...');
-  await page.goto(HOME, { waitUntil: 'networkidle2' });
-  await page.waitForFunction(() => window.onefeTestHelpers && typeof window.onefeTestHelpers.setActiveView === 'function');
+  try {
+    const smokePage = await browser.newPage();
+    smokePage.setDefaultTimeout(30000);
 
-  console.log('Switching host to Patterns view...');
-  await page.evaluate(() => {
-    window.onefeTestHelpers.setActiveView('patterns');
-  });
-  await page.waitForFunction(() => window.onefeTestHelpers.getActiveView() === 'patterns');
-  await page.waitForSelector('[data-action="new-tab-react"]', { visible: true });
+    await assertPage(smokePage, '', 'One Frontend Demonstrator', 'One Frontend Demonstrator');
+    await assertPage(
+      smokePage,
+      `calendar-target.html?context=${context}`,
+      'Angular App - Calendar',
+      'Kalender in Angular'
+    );
 
-  console.log('Opening React target page...');
-  const clickResult = await page.evaluate(() => {
-    const el = document.querySelector('[data-action="new-tab-react"]');
-    if (el) {
-      el.click();
-      return true;
-    }
-    return false;
-  });
-  if (!clickResult) {
-    console.error('Could not find new-tab-react trigger');
+    await smokePage.evaluate(() => {
+      [...document.querySelectorAll('groupui-button')]
+        .find((button) => button.textContent.includes('2026-06-18'))
+        ?.click();
+    });
+    await smokePage.waitForFunction(() => document.body.innerText.includes('Service-Termin (success)'));
+
+    await assertPage(
+      smokePage,
+      `target-svelte.html?context=${context}`,
+      'Svelte Remote - Flight Options',
+      'Echte Svelte-Komponente'
+    );
+    await smokePage.click('input[value="via-munich"]');
+    await smokePage.waitForFunction(() => document.body.innerText.includes('One Frontend Air'));
+    await smokePage.click('.svelte-submit');
+    await smokePage.waitForFunction(() => document.body.innerText.includes('Übergeben: Via München'));
+
+    await assertPage(
+      smokePage,
+      `target-stencil.html?context=${context}`,
+      'Web Component - Flight Extras',
+      'Native Custom Element'
+    );
+    await assertPage(
+      smokePage,
+      `target-react.html?context=${context}`,
+      'React Target - Case Follow-Up',
+      'React Target App'
+    );
+    await assertPage(
+      smokePage,
+      `linked-target.html?context=${context}`,
+      'Angular App - Case Follow-Up',
+      'Angular 20.0.7'
+    );
+
+    const hostPage = await browser.newPage();
+    hostPage.setDefaultTimeout(30000);
+    await hostPage.goto(BASE_URL, { waitUntil: 'networkidle2' });
+    await hostPage.waitForFunction(() => window.onefeTestHelpers);
+    await hostPage.evaluate(() => window.onefeTestHelpers.setActiveView('patterns'));
+    await hostPage.waitForSelector('[data-action="new-tab-react"]', { visible: true });
+
+    const targetPromise = browser.waitForTarget(
+      (target) => target.url().includes('target-react.html'),
+      { timeout: 20000 }
+    );
+    await hostPage.click('[data-action="new-tab-react"]');
+    const target = await targetPromise;
+    const targetPage = await target.page();
+    const note = `E2E follow-up ${Date.now()}`;
+
+    await targetPage.waitForSelector('input[name="note"]', { visible: true });
+    await hostPage.evaluate(() => window.onefeTestHelpers.setActiveView('linked-launchpad'));
+    await targetPage.type('input[name="note"]', note);
+    await targetPage.$eval('#followUpForm', (form) => {
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    });
+    await hostPage.waitForFunction(
+      (expected) => document.querySelector('.returned-note p')?.textContent.includes(expected),
+      { timeout: 30000 },
+      note
+    );
+
+    console.log('E2E success: all production targets and the host roundtrip work.');
+  } finally {
     await browser.close();
-    process.exit(2);
   }
-
-  const targetPagePromise = browser.waitForTarget((target) => target.url().includes('target-react.html'), { timeout: 20000 });
-  const targetTarget = await targetPagePromise;
-  const targetPage = await targetTarget.page();
-  if (!targetPage) {
-    console.error('Target page did not open');
-    await browser.close();
-    process.exit(2);
-  }
-  targetPage.on('dialog', async (dialog) => {
-    console.log('Dismiss dialog on target:', dialog.message());
-    await dialog.dismiss();
-  });
-  await targetPage.waitForSelector('input[name="note"]', { visible: true });
-
-  console.log('Target page opened. Switching host to Linked Launchpad before sending note...');
-  await page.evaluate(() => {
-    window.onefeTestHelpers.setActiveView('linked-launchpad');
-  });
-  await page.waitForFunction(() => window.onefeTestHelpers.getActiveView() === 'linked-launchpad');
-
-  console.log('Sending follow-up note from target...');
-  await targetPage.type('input[name="note"]', NOTE);
-  await targetPage.evaluate(() => {
-    const form = document.getElementById('followUpForm');
-    if (form) form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-  });
-
-  await page.waitForFunction((expected) => {
-    const el = document.querySelector('.returned-note p');
-    return el && el.textContent.includes(expected);
-  }, { timeout: 30000 }, NOTE);
-
-  const received = await page.$eval('.returned-note p', (el) => el.textContent);
-  if (received && received.includes(NOTE)) {
-    console.log('E2E success: Host received note ->', received);
-    await browser.close();
-    process.exit(0);
-  } else {
-    console.error('E2E failed: Host did not receive note');
-    await browser.close();
-    process.exit(1);
-  }
-})();
+})().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

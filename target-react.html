@@ -4,8 +4,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>React Target - Case Follow-Up</title>
-  <link rel="stylesheet" href="./node_modules/@group-ui/group-ui/dist/group-ui/assets/themes/tokens.css">
-  <link rel="stylesheet" href="./node_modules/@group-ui/group-ui-css-framework/dist/groupui.css">
   <link rel="stylesheet" href="./styles.css">
   <style>
     .target-root { padding: 24px; max-width: 880px; margin: 24px auto; }
@@ -16,9 +14,9 @@
 <body>
   <div class="target-root">
     <groupui-headline heading="h2">React Target App (Proof)</groupui-headline>
-    <div class="proof-badge">Runtime: <strong>React 18 (UMD)</strong></div>
+    <div class="proof-badge">Runtime: <strong>React 18 · Vite bundle</strong></div>
 
-    <p>This page loads React from UMD bundles and renders a small proof component. It reads the serialized context from the URL and sends back a follow-up note via BroadcastChannel.</p>
+    <p>This page runs a bundled React 18 application. It reads the serialized context from the URL and sends back a follow-up note via BroadcastChannel.</p>
 
     <div id="root"></div>
 
@@ -31,15 +29,23 @@
       <p id="submitStatus" class="save-message" hidden></p>
     </form>
 
-    <groupui-headline heading="h4">Proof: this is a React UMD page</groupui-headline>
-    <div class="code-block">&lt;!-- target-react.html --&gt;\nThis page uses React from a UMD build in the browser.</div>
+    <groupui-headline heading="h4">Proof: this is a React page</groupui-headline>
+    <div class="code-block">&lt;!-- target-react.html --&gt;\nReact and this entry point are bundled by Vite.</div>
 
     <div style="margin-top:18px;"><groupui-button variant="secondary" id="closeBtn">Close window</groupui-button></div>
   </div>
 
-  <script src="./node_modules/react/umd/react.development.js"></script>
-  <script src="./node_modules/react-dom/umd/react-dom.development.js"></script>
   <script type="module">
+    import React from 'react';
+    import ReactDOM from 'react-dom/client';
+    import '@group-ui/group-ui/dist/group-ui/assets/themes/tokens.css';
+    import '@group-ui/group-ui-css-framework/dist/groupui.css';
+    import { defineCustomElements } from '@group-ui/group-ui/dist/loader/index.es2017.js';
+
+    defineCustomElements().catch((error) => {
+      console.error('GroupUI custom elements failed to load', error);
+    });
+
     function deserializeParam() {
       const url = new URL(window.location.href);
       const raw = url.searchParams.get('context');

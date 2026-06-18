@@ -23,10 +23,10 @@ Die Patterns-View bietet fünf Target-Buttons:
 
 | Button | Target-Datei | Technologie |
 |--------|--------------|-------------|
-| Open New Tab: React Target | `target-react.html` | React UMD |
-| Open New Tab: Angular Target | `linked-target.html` | Angular UMD |
+| Open New Tab: React Target | `target-react.html` | React 18 |
+| Open New Tab: Angular Target | `linked-target.html` | Angular 20 |
 | Open New Tab: Angular Calendar | `calendar-target.html` | Angular + GroupUI DatePicker |
-| Open New Tab: Svelte Target | `target-svelte.html` | Static Demo |
-| Open New Tab: Stencil Target | `target-stencil.html` | Static Demo |
+| Open New Tab: Svelte Target | `target-svelte.html` | Svelte 5 |
+| Open New Tab: Web Component Target | `target-stencil.html` | natives Custom Element, Stencil-style |
 
 Jedes Target empfängt serialisierten Kontext via URL-Parameter und kann Follow-up-Notes via BroadcastChannel oder `window.opener.postMessage` zurückschicken.

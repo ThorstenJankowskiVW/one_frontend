@@ -56,5 +56,15 @@
 - `@group-ui/group-ui` ueber `https://groupui.vwapps.run/latest/packages/group-ui.tgz` installiert.
 - `@group-ui/group-ui-css-framework` ueber `https://groupui-css.vwapps.run/latest/groupui-css.tgz` installiert.
 - `app.js` registriert die GroupUI Web Components ueber `defineCustomElements()` aus dem installierten Loader.
-- `index.html` laedt Tokens und CSS Framework lokal aus `node_modules`.
-- Runtime-Nachweis ergaenzt: Die Demo zeigt registrierte GroupUI Custom Elements und HTTP-Status der lokal geladenen GroupUI-Assets direkt in der Oberflaeche.
+- Vite bündelt Loader, Tokens und CSS Framework in das statische Build-Artefakt.
+- Runtime-Nachweis ergänzt: Die Demo zeigt registrierte GroupUI Custom Elements und die in den Vite-Build integrierten GroupUI-Assets direkt in der Oberfläche.
+
+## 2026-06-18
+
+- Angular Targets von fragilen UMD-Globals auf gebündelte Angular-20-Imports umgestellt.
+- Vite als Multi-Page-Build konfiguriert; alle Host- und Target-Seiten werden nach `dist/` erzeugt.
+- Flight-Options-Target als echte Svelte-5-Komponente umgesetzt.
+- Flight-Extras-Proof korrekt als natives Custom Element mit Stencil-artiger Grenze bezeichnet.
+- Produktionspfade sind Base-aware für `/one_frontend/`.
+- Browser-E2E auf alle Produktions-Targets und den Rückkanal Target → Host erweitert.
+- `node_modules/` und `dist/` über `.gitignore` aus der Versionsverwaltung ausgeschlossen.

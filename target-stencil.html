@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Stencil / Web Components - Flight Extras</title>
-  <link rel="stylesheet" href="./node_modules/@group-ui/group-ui/dist/group-ui/assets/themes/tokens.css">
-  <link rel="stylesheet" href="./node_modules/@group-ui/group-ui-css-framework/dist/groupui.css">
+  <title>Web Component - Flight Extras</title>
   <link rel="stylesheet" href="./styles.css?v=flight-extras-1">
   <script type="module">
-    import { defineCustomElements } from './node_modules/@group-ui/group-ui/dist/loader/index.es2017.js';
+    import '@group-ui/group-ui/dist/group-ui/assets/themes/tokens.css';
+    import '@group-ui/group-ui-css-framework/dist/groupui.css';
+    import { defineCustomElements } from '@group-ui/group-ui/dist/loader/index.es2017.js';
 
     defineCustomElements().catch((error) => {
       console.error('GroupUI custom elements failed to load', error);
@@ -213,7 +213,7 @@
         this.innerHTML = `
           <main class="extras-root">
             <groupui-card padding="24px">
-              <groupui-tag>Web Components / Stencil</groupui-tag>
+              <groupui-tag>Web Component · Stencil-style</groupui-tag>
               <groupui-headline heading="h1">Reise-Extras auswählen</groupui-headline>
               <groupui-text>
                 ${context.origin || 'Hannover'} → ${context.destination || 'Barcelona'} · ${context.departureDate || 'Datum offen'} · ${context.flightBooking?.flightOption?.label || 'Flugoption offen'}
@@ -274,8 +274,11 @@
 
             <groupui-card padding="20px">
               <groupui-tag>Runtime Proof</groupui-tag>
-              <groupui-headline heading="h3">Custom Element</groupui-headline>
-              <groupui-text>Die sichtbare Anwendung wird von <code>&lt;flight-extras-remote&gt;</code> gerendert.</groupui-text>
+              <groupui-headline heading="h3">Native Custom Element</groupui-headline>
+              <groupui-text>
+                Die sichtbare Anwendung wird von <code>&lt;flight-extras-remote&gt;</code> gerendert.
+                Sie demonstriert die Stencil-artige Integrationsgrenze ohne einen Stencil-Compiler zu behaupten.
+              </groupui-text>
               <pre>${JSON.stringify(context, null, 2)}</pre>
             </groupui-card>
           </main>

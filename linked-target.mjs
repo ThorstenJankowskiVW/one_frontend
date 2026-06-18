@@ -1,4 +1,13 @@
-import { defineCustomElements } from './node_modules/@group-ui/group-ui/dist/loader/index.es2017.js';
+import 'reflect-metadata';
+import 'zone.js';
+import { defineCustomElements } from '@group-ui/group-ui/dist/loader/index.es2017.js';
+import '@group-ui/group-ui/dist/group-ui/assets/themes/tokens.css';
+import '@group-ui/group-ui-css-framework/dist/groupui.css';
+import '@angular/compiler';
+import { BrowserModule } from '@angular/platform-browser';
+import { Component, NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
 import { createLinkedLaunchContext, linkedTransferPayload, readLinkedContextFromUrl } from './linked-context.js';
 
 defineCustomElements().catch((error) => {
@@ -42,7 +51,8 @@ class LinkedTargetComponent {
   }
 }
 
-ng.core.Component({
+Component({
+  standalone: false,
   selector: 'linked-target-root',
   template: `
     <main class="linked-page">
@@ -67,7 +77,7 @@ ng.core.Component({
         </div>
         <div class="journey-card">
           <span>Technology</span>
-          <strong>Angular 12</strong>
+          <strong>Angular 20.0.7</strong>
           <p>The target system was launched explicitly, not embedded.</p>
         </div>
         <div class="journey-card">
@@ -131,10 +141,10 @@ ng.core.Component({
 
 class LinkedTargetModule {}
 
-ng.core.NgModule({
+NgModule({
   declarations: [LinkedTargetComponent],
-  imports: [ng.platformBrowser.BrowserModule, ng.forms.FormsModule],
+  imports: [BrowserModule, FormsModule],
   bootstrap: [LinkedTargetComponent]
 })(LinkedTargetModule);
 
-ng.platformBrowserDynamic.platformBrowserDynamic().bootstrapModule(LinkedTargetModule);
+platformBrowserDynamic().bootstrapModule(LinkedTargetModule).catch((err) => console.error(err));

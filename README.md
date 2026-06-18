@@ -1,73 +1,79 @@
 # One Frontend Demonstrator
 
-Lokaler Prototyp fuer den Vergleich mehrerer Integrationsbilder in einer Demo-Anwendung.
+Multi-Frontend-Demonstrator mit gemeinsamer UX, Context Passing und mehreren Integrationsformen.
 
-## Lokal starten
+## Entwicklung
 
 ```bash
-npm start
+npm install
+npm run dev
 ```
 
-Danach im Browser oeffnen:
+Vite stellt die Anwendung unter folgender Base-URL bereit:
 
 ```text
-http://localhost:4173
+http://localhost:5173/one_frontend/
 ```
 
-## Sichtbare Zielbilder
+Falls der Port belegt ist, zeigt Vite den tatsächlich verwendeten Port im Terminal an.
 
-- Linked Launchpad
-- Embedded Workspace
-- Integrated Experience
-
-## Sichtbare Integrationsmuster
-
-- New Tab / New Window
-- Modal / Dialog
-- Navigation
-- Prozessschritt-Integration
-- Dashboard-Kachel / App-Launcher
-
-## Kontextmodell
-
-Der Demonstrator nutzt ein gemeinsames Context Model mit:
-
-- `caseId`
-- `vehicleId`
-- `customerId`
-- `market`
-- `language`
-- `userRole`
-- `sourceApp`
-- `sourceStep`
-- `integrationMode`
-
-## Runtime-Proofs (New Tab Targets)
-
-| Target | Technologie | Datei |
-|--------|-------------|-------|
-| React | React UMD | `target-react.html` |
-| Angular | Angular UMD | `linked-target.html` |
-| Calendar | Angular + GroupUI DatePicker | `calendar-target.html` |
-| Svelte | Static Demo | `target-svelte.html` |
-| Stencil | Static Demo | `target-stencil.html` |
-
-Alle Targets nutzen BroadcastChannel + postMessage-Fallback fuer Rückmeldungen an den Host.
-
-## E2E-Automatisierung
+## Produktions-Build
 
 ```bash
-node tests/e2e.cjs
+npm run build
+npm run preview
 ```
 
-Verifiziert: Host öffnet Target in neuem Tab, Target sendet Follow-up-Note, Host empfängt die Note.
+`npm run build` erzeugt in `dist/` alle Einstiegspunkte:
 
-## GroupUI-Hinweis
+- React Host Shell (`index.html`)
+- Angular Calendar (`calendar-target.html`)
+- React Linked Host (`linked-host.html`)
+- Angular Linked Target (`linked-target.html`)
+- React Target (`target-react.html`)
+- Svelte Target (`target-svelte.html`)
+- natives Web-Component-Target (`target-stencil.html`, historischer Dateiname)
 
-Die Demo nutzt lokal installierte GroupUI-Pakete:
+Alle npm-Abhängigkeiten werden von Vite gebündelt. Das veröffentlichte `dist/` benötigt kein
+`node_modules` zur Laufzeit.
 
-- `@group-ui/group-ui` fuer Web Components
-- `@group-ui/group-ui-css-framework` fuer das CSS Framework
-- `@group-ui/design-tokens-json` fuer JSON Design Tokens
+## Technologie-Proofs
 
-Die Web Components werden in [app.js](app.js) ueber `defineCustomElements()` aus `@group-ui/group-ui/dist/loader/index.es2017.js` registriert. Styles und Tokens werden lokal aus `node_modules` geladen, nicht mehr ueber das externe CSS-CDN.
+| Target | Umsetzung |
+| --- | --- |
+| Host Shell | Vite-Modul mit GroupUI Web Components |
+| Linked Host | React 18 |
+| Calendar Target | Angular 20 + GroupUI DatePicker |
+| Linked Target | Angular 20 + Forms |
+| Flight Options | echte Svelte-5-Komponente |
+| Flight Extras | natives Custom Element, Stencil-artige Integrationsgrenze |
+| React Target | React 18 |
+
+Die Anwendungen übertragen Kontext per URL und senden Ergebnisse über `BroadcastChannel` sowie
+`postMessage` zurück.
+
+## Qualitätssicherung
+
+```bash
+npm test
+```
+
+Prüft Syntax und vollständigen Produktions-Build.
+
+Für den Browsertest zuerst den Preview-Server starten:
+
+```bash
+npm run preview -- --host 127.0.0.1 --port 4173
+BASE_URL=http://127.0.0.1:4173/one_frontend/ npm run test:e2e
+```
+
+Der E2E-Test öffnet alle Produktions-Targets, testet Angular- und Svelte-Interaktionen und
+verifiziert den Rückkanal vom React Target zur Host Shell.
+
+## Deployment
+
+Die Vite-Base ist `/one_frontend/`. Für GitHub Pages kann der Inhalt von `dist/` unter dem
+Repository-Pfad `one_frontend` veröffentlicht werden.
+
+Kein `npm audit fix --force` verwenden: Major-Upgrades müssen bewusst und gemeinsam für den
+Angular-Abhängigkeitsbaum durchgeführt werden.

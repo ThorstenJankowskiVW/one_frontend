@@ -51,10 +51,11 @@ one_frontend/
 ## Runtime-Proofs (New Tab Targets)
 
 - `calendar-target.html/.mjs/.css`: Angular-App mit GroupUI DatePicker
-- `target-react.html`: React-UMD-App mit Follow-up-Formular
-- `target-svelte.html`: statischer Svelte-Proof mit BroadcastChannel
-- `target-stencil.html`: statischer Stencil-Proof mit BroadcastChannel
-- `linked-target.html/.mjs`: Angular-UMD-App fuer Linked Launchpad
+- `target-react.html`: gebündelte React-App mit Follow-up-Formular
+- `target-svelte.html` + `target-svelte.js`: Einstieg für die echte Svelte-Remote
+- `apps/remote-svelte-options/src/SvelteFlightOptions.svelte`: Svelte-Komponente für Flugoptionen
+- `target-stencil.html`: natives Custom Element als Stencil-artiger Web-Component-Proof
+- `linked-target.html/.mjs`: gebündelte Angular-App für Linked Launchpad
 
 ## Test-Automatisierung
 

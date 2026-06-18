@@ -1,4 +1,13 @@
-import { defineCustomElements } from './node_modules/@group-ui/group-ui/dist/loader/index.es2017.js';
+import 'reflect-metadata';
+import 'zone.js';
+import { defineCustomElements } from '@group-ui/group-ui/dist/loader/index.es2017.js';
+import '@group-ui/group-ui/dist/group-ui/assets/themes/tokens.css';
+import '@group-ui/group-ui-css-framework/dist/groupui.css';
+import './calendar-target.css?v=date-transfer-3';
+import '@angular/compiler';
+import { BrowserModule } from '@angular/platform-browser';
+import { Component, NgModule, CUSTOM_ELEMENTS_SCHEMA, VERSION } from '@angular/core';
+import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
 import { readLinkedContextFromUrl } from './linked-context.js';
 
 defineCustomElements().catch((error) => {
@@ -11,7 +20,7 @@ class CalendarTargetComponent {
   context = context;
   selectedDate = context.selectedAppointmentDate || context.departureDate || context.flightBooking?.departureDate || '';
   changeDetectionTicks = 0;
-  angularVersion = ng.core.VERSION.full;
+  angularVersion = VERSION.full;
   zoneProof = window.Zone ? 'Zone.js aktiv' : 'Zone.js nicht gefunden';
   intervalId = null;
   transferred = false;
@@ -122,7 +131,8 @@ class CalendarTargetComponent {
       targetApp: 'react-follow-up-target'
     });
     const serializedContext = encodeURIComponent(JSON.stringify(transferPayload.context));
-    window.open(`${window.location.origin}/target-react.html?context=${serializedContext}`, '_blank');
+    const base = import.meta.env.BASE_URL;
+    window.open(`${window.location.origin}${base}target-react.html?context=${serializedContext}`, '_blank');
     this.markTransferDone(transferPayload);
   }
 
@@ -193,7 +203,8 @@ class CalendarTargetComponent {
   }
 }
 
-ng.core.Component({
+Component({
+  standalone: false,
   selector: 'calendar-target-root',
   template: `
     <main class="calendar-page">
@@ -202,7 +213,7 @@ ng.core.Component({
           <div>
             <groupui-tag>Angular Calendar App</groupui-tag>
             <groupui-headline heading="h1">Kalender in Angular</groupui-headline>
-            <groupui-text class="hero-lead">Eine echte Angular-UMD-App zeigt einen interaktiven Kalender mit Demo-Terminen.</groupui-text>
+            <groupui-text class="hero-lead">Eine echte, durch Vite gebündelte Angular-App zeigt einen interaktiven Kalender mit Demo-Terminen.</groupui-text>
           </div>
         </groupui-card>
 
@@ -292,7 +303,7 @@ ng.core.Component({
             <groupui-tag>Angular Runtime Proof</groupui-tag>
             <groupui-headline heading="h2">Das ist nachweislich Angular</groupui-headline>
             <groupui-text>
-              Diese Werte kommen direkt aus der laufenden Angular-UMD-Runtime und aus Angulars
+              Diese Werte kommen direkt aus der laufenden Angular-Runtime und aus Angulars
               Template-Binding. Der Zähler aktualisiert sich über Angular Change Detection.
             </groupui-text>
           </div>
@@ -335,11 +346,11 @@ ng.core.Component({
 
 class CalendarTargetModule {}
 
-ng.core.NgModule({
+NgModule({
   declarations: [CalendarTargetComponent],
-  imports: [ng.platformBrowser.BrowserModule, ng.common.CommonModule],
-  schemas: [ng.core.CUSTOM_ELEMENTS_SCHEMA],
+  imports: [BrowserModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   bootstrap: [CalendarTargetComponent]
 })(CalendarTargetModule);
 
-ng.platformBrowserDynamic.platformBrowserDynamic().bootstrapModule(CalendarTargetModule);
+platformBrowserDynamic().bootstrapModule(CalendarTargetModule).catch((err) => console.error(err));

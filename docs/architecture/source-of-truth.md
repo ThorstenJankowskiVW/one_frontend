@@ -45,11 +45,11 @@ Die folgenden Targets sind implementiert und verifizieren echte Runtime-Integrat
 
 | Target | Technologie | Datei | Besonderheiten |
 |--------|-------------|-------|----------------|
-| React Target | React UMD | `target-react.html` | Context via URL, Follow-up via BroadcastChannel/postMessage |
-| Angular Target | Angular UMD | `linked-target.html` | FormGroup, Follow-up-Note-Formular |
-| Angular Calendar | Angular UMD + GroupUI DatePicker | `calendar-target.html` | `groupui-date-picker` mit `date-format="d.m.Y"` |
-| Svelte Target | Static Demo | `target-svelte.html` | BroadcastChannel für Follow-up |
-| Stencil Target | Static Demo | `target-stencil.html` | BroadcastChannel für Follow-up |
+| React Target | React 18, durch Vite gebündelt | `target-react.html` | Context via URL, Follow-up via BroadcastChannel/postMessage |
+| Angular Target | Angular 20 JIT, durch Vite gebündelt | `linked-target.html` | Forms, Follow-up-Note-Formular |
+| Angular Calendar | Angular 20 + GroupUI DatePicker | `calendar-target.html` | `groupui-date-picker` mit `date-format="d.m.Y"` |
+| Svelte Target | Svelte 5 | `target-svelte.html` | reaktiver State und BroadcastChannel/postMessage |
+| Web Component Target | natives Custom Element, Stencil-style | `target-stencil.html` | eigener State und BroadcastChannel/postMessage |
 
 ## E2E-Automatisierung
 
