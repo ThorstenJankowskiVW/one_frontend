@@ -46,8 +46,30 @@ function applyColorMode(mode) {
   syncColorModeToFrames(mode);
 }
 
+const navigableViewIds = new Set(
+  primaryViews.flatMap((item) => [item.id, ...(item.children || []).map((child) => child.id)])
+);
+
+function readViewFromUrl() {
+  const requestedView = new URL(window.location.href).searchParams.get('view');
+  return navigableViewIds.has(requestedView) ? requestedView : 'overview';
+}
+
+function writeViewToUrl(view, { replace = false } = {}) {
+  const url = new URL(window.location.href);
+
+  if (view === 'overview') {
+    url.searchParams.delete('view');
+  } else {
+    url.searchParams.set('view', view);
+  }
+
+  const method = replace ? 'replaceState' : 'pushState';
+  window.history[method]({ view }, '', url);
+}
+
 const state = {
-  activeView: 'overview',
+  activeView: readViewFromUrl(),
   colorMode: currentColorMode(),
   activeContext: createContext(),
   eventLog: createEventLog(),
@@ -211,6 +233,7 @@ async function updateGroupUiRuntimeStatus() {
 const navigate = createNavigationTrigger((targetView, context) => {
   state.activeView = targetView;
   state.activeContext = createContext(context);
+  writeViewToUrl(targetView);
   render();
 }, state.eventLog);
 
@@ -396,7 +419,7 @@ function renderHeader() {
 
   return `
     <header>
-      <groupui-global-top-navigation breakpoint="s" manual-mode aria-label="Hauptnavigation">
+      <groupui-global-top-navigation breakpoint="l" manual-mode aria-label="Hauptnavigation">
         <groupui-brand-logo type="application">One Frontend Demonstrator</groupui-brand-logo>
         <groupui-global-top-navigation-mobile-utility-items>
           <groupui-burger-menu a11y-label-open-button="Navigation öffnen" a11y-label-close-button="Navigation schließen">
@@ -1688,6 +1711,11 @@ function handleFlightFieldChange(event) {
 
 document.addEventListener('change', handleFlightFieldChange);
 document.addEventListener('input', handleFlightFieldChange);
+
+window.addEventListener('popstate', () => {
+  state.activeView = readViewFromUrl();
+  render();
+});
 
 render();
 

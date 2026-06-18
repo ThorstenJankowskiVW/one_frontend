@@ -209,4 +209,24 @@
     font-weight: 700;
     cursor: pointer;
   }
+
+  @media (max-width: 600px) {
+    .svelte-flight-root {
+      gap: 12px;
+      padding: 12px;
+    }
+
+    .flight-options label {
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 12px;
+    }
+
+    .flight-options label > strong {
+      grid-column: 2;
+    }
+
+    .svelte-submit {
+      width: 100%;
+    }
+  }
 </style>

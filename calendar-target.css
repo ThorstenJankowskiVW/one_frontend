@@ -126,3 +126,33 @@ body {
   font-size: 1rem;
   font-weight: 700;
 }
+
+@media (max-width: 600px) {
+  .calendar-page {
+    padding: 12px;
+  }
+
+  .calendar-hero,
+  .date-selection-card,
+  .calendar-summary,
+  .appointment-transfer,
+  .angular-proof {
+    margin-bottom: 12px;
+  }
+
+  .demo-date-actions,
+  .transfer-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .demo-date-actions groupui-button,
+  .transfer-actions groupui-button,
+  .datepicker-actions groupui-button {
+    width: 100%;
+  }
+
+  .proof-grid {
+    grid-template-columns: 1fr;
+  }
+}

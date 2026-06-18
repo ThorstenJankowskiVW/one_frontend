@@ -18,6 +18,7 @@
 body {
   margin: 0;
   min-height: 100vh;
+  overflow-x: hidden;
   color: var(--onefe-text);
   background: var(--groupui-sys-color-background-canvas);
   font-family: var(--groupui-sys-font-family-primary), Arial, Helvetica, sans-serif;
@@ -45,6 +46,12 @@ header {
   top: 0;
   z-index: var(--groupui-sys-z-index-navigation, 300);
   background: var(--groupui-sys-color-background-base);
+}
+
+groupui-global-top-navigation,
+groupui-brand-logo {
+  min-width: 0;
+  max-width: 100%;
 }
 
 groupui-tag {
@@ -280,6 +287,14 @@ main > .view:first-child {
 .flight-stepper {
   display: grid;
   gap: 14px;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+.flight-stepper groupui-stepper-horizontal {
+  min-width: 620px;
 }
 
 .flight-stepper groupui-step {
@@ -961,18 +976,27 @@ main > .view:first-child {
   font-size: 12px;
 }
 
-.g-modal {
+dialog.g-modal {
+  inset: 0;
+  left: auto;
+  top: auto;
+  transform: none;
   width: min(760px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  max-height: calc(100dvh - 32px);
+  margin: auto;
   border: 0;
   border-radius: 8px;
   padding: 0;
+  overflow: auto;
 }
 
-.g-modal-calendar {
+dialog.g-modal-calendar {
   width: min(1120px, calc(100vw - 32px));
+  overflow: hidden;
 }
 
-.g-modal::backdrop {
+dialog.g-modal::backdrop {
   background: var(--groupui-sys-color-background-backdrop);
 }
 
@@ -982,8 +1006,12 @@ main > .view:first-child {
 
 .calendar-modal-shell {
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 16px;
+  height: min(860px, calc(100dvh - 32px));
+  max-height: calc(100dvh - 32px);
   padding: 24px;
+  overflow: hidden;
 }
 
 .calendar-modal-header {
@@ -995,8 +1023,8 @@ main > .view:first-child {
 
 .calendar-modal-frame {
   width: 100%;
-  height: min(760px, calc(100vh - 220px));
-  min-height: 560px;
+  height: 100%;
+  min-height: 0;
   border: 1px solid var(--gds-sys-color-line-weak);
   border-radius: 8px;
   background: var(--groupui-sys-color-background-base);
@@ -1086,5 +1114,111 @@ main > .view:first-child {
 
   .flight-form {
     grid-template-columns: 1fr;
+  }
+
+  dialog.g-modal {
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
+  }
+
+  .modal-inner {
+    padding: 20px;
+  }
+
+  .calendar-modal-shell {
+    height: calc(100dvh - 16px);
+    max-height: calc(100dvh - 16px);
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .calendar-modal-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+  }
+
+  .calendar-modal-header groupui-tag {
+    margin-bottom: 8px;
+  }
+
+  .calendar-modal-header groupui-text {
+    display: none;
+  }
+
+  .calendar-modal-frame {
+    border-radius: 4px;
+  }
+}
+
+@media (max-width: 1400px) {
+  groupui-global-top-navigation-utility-items {
+    display: none !important;
+  }
+}
+
+@media (max-width: 960px) {
+  groupui-global-top-navigation-items {
+    display: none !important;
+  }
+
+  groupui-global-top-navigation-mobile-utility-items {
+    display: block !important;
+  }
+}
+
+@media (max-width: 420px) {
+  main {
+    padding: 20px 12px;
+  }
+
+  groupui-brand-logo {
+    max-width: calc(100vw - 88px);
+    overflow: hidden;
+  }
+
+  .view-heading,
+  .flight-booking-view,
+  .flight-booking-grid {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .flight-step-technologies {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .flight-step-technologies span {
+    flex: 0 0 auto;
+  }
+
+  .action-row,
+  .action-row.right,
+  .flight-summary-actions,
+  .transfer-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .action-row groupui-button,
+  .action-row.right groupui-button,
+  .flight-summary-actions groupui-button,
+  .transfer-actions groupui-button {
+    width: 100%;
+  }
+
+  .calendar-modal-shell {
+    padding: 12px;
+  }
+
+  .calendar-modal-header {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-modal-header > groupui-button {
+    width: 100%;
   }
 }

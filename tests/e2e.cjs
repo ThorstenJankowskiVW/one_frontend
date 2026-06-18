@@ -54,6 +54,12 @@ async function assertPage(page, path, expectedTitle, expectedText) {
     await assertPage(smokePage, '', 'One Frontend Demonstrator', 'One Frontend Demonstrator');
     await assertPage(
       smokePage,
+      '?view=flight-booking',
+      'One Frontend Demonstrator',
+      'Flugbuchung Hannover'
+    );
+    await assertPage(
+      smokePage,
       `calendar-target.html?context=${context}`,
       'Angular App - Calendar',
       'Kalender in Angular'
