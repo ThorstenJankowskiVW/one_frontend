@@ -1,4 +1,6 @@
 <script>
+  import { servicePackages } from '../../../packages/demo-data/src/cases.js';
+
   const params = new URL(window.location.href).searchParams;
   const rawContext = params.get('context');
 
@@ -9,7 +11,8 @@
     context = {};
   }
 
-  const options = [
+  const isAftersales = context.journeyType !== 'flight-booking';
+  const flightOptions = [
     {
       id: 'direct-morning',
       label: 'Direktflug morgens',
@@ -39,7 +42,11 @@
     }
   ];
 
+  const options = isAftersales ? servicePackages : flightOptions;
+
   let selectedOptionId =
+    context.selectedServicePackage?.id ||
+    context.servicePackageId ||
     context.selectedFlightOption?.id ||
     context.flightOption?.id ||
     context.flightBooking?.flightOption?.id ||
@@ -64,6 +71,29 @@
   }
 
   function submitOption() {
+    if (isAftersales) {
+      const payload = {
+        type: 'service-package-transfer',
+        from: 'svelte-service-package-target',
+        targetApp: 'react-shell',
+        note: `Service package selected: ${selectedOption.label}`,
+        servicePackage: selectedOption,
+        context: {
+          ...context,
+          sourceStep: 'service-package-selected',
+          selectedServicePackage: selectedOption,
+          servicePackageId: selectedOption.id,
+          servicePackageLabel: selectedOption.label,
+          estimatedDurationMinutes: selectedOption.estimatedDurationMinutes,
+          estimatedPrice: selectedOption.estimatedPrice
+        }
+      };
+
+      postPayload(payload);
+      transferStatus = `Übergeben: ${selectedOption.label}`;
+      return;
+    }
+
     const payload = {
       type: 'flight-option-transfer',
       from: 'svelte-flight-options-target',
@@ -84,35 +114,52 @@
 
 <main class="svelte-flight-root">
   <groupui-card padding="24px">
-    <groupui-tag>Svelte Remote</groupui-tag>
-    <groupui-headline heading="h1">Flugoption auswählen</groupui-headline>
+    <groupui-tag>Svelte Target</groupui-tag>
+    <groupui-headline heading="h1">
+      {isAftersales ? 'Servicepaket auswählen' : 'Flugoption auswählen'}
+    </groupui-headline>
     <groupui-text>
-      {context.origin || 'Hannover'} → {context.destination || 'Barcelona'} ·
-      {context.departureDate || 'Datum offen'} · {context.passengers || 1} Reisende
+      {#if isAftersales}
+        {context.vehicleModel || 'Volkswagen ID.7 Tourer'} · {context.serviceConcern || 'Inspection with brake and software check'} ·
+        {context.appointmentDate || 'Termin offen'}
+      {:else}
+        {context.origin || 'Hannover'} → {context.destination || 'Barcelona'} ·
+        {context.departureDate || 'Datum offen'} · {context.passengers || 1} Reisende
+      {/if}
     </groupui-text>
   </groupui-card>
 
   <groupui-card padding="24px" class="svelte-option-panel">
-    <groupui-headline heading="h2">Verfügbare Flugoptionen</groupui-headline>
-    <groupui-text>Die Auswahl und Darstellung werden reaktiv von Svelte gerendert.</groupui-text>
+    <groupui-headline heading="h2">
+      {isAftersales ? 'Verfügbare Servicepakete' : 'Verfügbare Flugoptionen'}
+    </groupui-headline>
+    <groupui-text>
+      {isAftersales
+        ? 'Svelte rendert einen kompakten Empfehlungs-Schritt für Aftersales-Pakete.'
+        : 'Die Auswahl und Darstellung werden reaktiv von Svelte gerendert.'}
+    </groupui-text>
 
     <fieldset class="flight-options">
-      <legend>Flugoption</legend>
+      <legend>{isAftersales ? 'Service package' : 'Flugoption'}</legend>
       {#each options as option}
         <label class:selected={selectedOptionId === option.id}>
           <input type="radio" name="flight-option" value={option.id} bind:group={selectedOptionId} />
           <span>
             <strong>{option.label}</strong>
-            <small>{option.carrier} · {option.departure}–{option.arrival} · {option.duration}</small>
+            {#if isAftersales}
+              <small>{option.summary} · {option.estimatedDurationMinutes} min</small>
+            {:else}
+              <small>{option.carrier} · {option.departure}–{option.arrival} · {option.duration}</small>
+            {/if}
           </span>
-          <strong>{option.price} EUR</strong>
+          <strong>{isAftersales ? option.estimatedPrice : option.price} EUR</strong>
         </label>
       {/each}
     </fieldset>
 
     <div class="action-row right">
       <button class="svelte-submit" type="button" on:click={submitOption}>
-        Ausgewählte Flugoption übernehmen
+        {isAftersales ? 'Servicepaket übernehmen' : 'Ausgewählte Flugoption übernehmen'}
       </button>
     </div>
     {#if transferStatus}
@@ -124,8 +171,12 @@
     <groupui-tag>Aktuelle Auswahl</groupui-tag>
     <groupui-headline heading="h3">{selectedOption.label}</groupui-headline>
     <groupui-text>
-      {selectedOption.carrier} · Abflug {selectedOption.departure} · Ankunft {selectedOption.arrival} ·
-      {selectedOption.duration} · {selectedOption.price} EUR
+      {#if isAftersales}
+        {selectedOption.summary} · {selectedOption.estimatedDurationMinutes} min · {selectedOption.estimatedPrice} EUR
+      {:else}
+        {selectedOption.carrier} · Abflug {selectedOption.departure} · Ankunft {selectedOption.arrival} ·
+        {selectedOption.duration} · {selectedOption.price} EUR
+      {/if}
     </groupui-text>
   </groupui-card>
 
@@ -133,8 +184,7 @@
     <groupui-tag>Runtime Proof</groupui-tag>
     <groupui-headline heading="h3">Echte Svelte-Komponente</groupui-headline>
     <groupui-text>
-      Diese Ansicht stammt aus einer <code>.svelte</code>-Komponente und wird durch das offizielle
-      Vite-Svelte-Plugin kompiliert.
+      Diese Ansicht stammt aus einer <code>.svelte</code>-Komponente und wird durch das offizielle Vite-Svelte-Plugin kompiliert.
     </groupui-text>
     <pre>{JSON.stringify(context, null, 2)}</pre>
   </groupui-card>

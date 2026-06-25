@@ -1,14 +1,147 @@
 import { defineCustomElements } from '@group-ui/group-ui/dist/loader/index.es2017.js';
-import { createContext, integrationModes, serializeContext } from './packages/context-model/src/context.js';
-import { demoCase, initialContexts, journeySteps, targetPictures } from './packages/demo-data/src/cases.js';
-import { createContextEventBridge, createEventLog, createModalTrigger, createNavigationTrigger, recordEvent } from './packages/integration-layer/src/integration.js';
-import { primaryViews } from './packages/ui-contracts/src/navigation.js?v=isolated-pages-1';
+import { createContext, deserializeContext, integrationModes, serializeContext } from './packages/context-model/src/context.js';
+import {
+  aftersalesScenarioCards,
+  demoCase,
+  flightReferenceFlow,
+  initialContexts,
+  journeySteps,
+  servicePackages,
+  targetPictures,
+  workshopAppointments
+} from './packages/demo-data/src/cases.js';
+import {
+  createContextEventBridge,
+  createEventLog,
+  createNavigationTrigger,
+  describeIntegrationMode,
+  recordEvent
+} from './packages/integration-layer/src/integration.js';
+import { primaryViews } from './packages/ui-contracts/src/navigation.js?v=aftersales-platform-1';
 import './apps/remote-webcomponents-action/src/action-card.js';
 import { renderVanillaResult } from './apps/remote-vanilla-result/src/result.js';
 
-defineCustomElements();
+defineCustomElements().catch((error) => {
+  console.error('GroupUI custom elements failed to load', error);
+});
 
 const COLOR_MODE_STORAGE_KEY = 'onefe-color-mode';
+const flightOptionsTargetVersion = 'aftersales-packages-1';
+const flightExtrasTargetVersion = 'aftersales-extras-1';
+
+const flightOptions = [
+  {
+    id: 'direct-morning',
+    label: 'Direktflug morgens',
+    carrier: 'Demo Airlines',
+    duration: '2h 25m',
+    departure: '08:35',
+    arrival: '11:00',
+    price: 219
+  },
+  {
+    id: 'via-munich',
+    label: 'Via München',
+    carrier: 'One Frontend Air',
+    duration: '4h 10m',
+    departure: '10:15',
+    arrival: '14:25',
+    price: 179
+  },
+  {
+    id: 'evening-flex',
+    label: 'Flex-Tarif abends',
+    carrier: 'GroupUI Wings',
+    duration: '2h 35m',
+    departure: '18:40',
+    arrival: '21:15',
+    price: 289
+  }
+];
+
+const aftersalesSteps = [
+  { step: 1, title: 'Service context / Service-Kontext', app: 'React Shell' },
+  { step: 2, title: 'Workshop capacity / Werkstattkapazität', app: 'Angular Target' },
+  { step: 3, title: 'Package recommendation / Paketempfehlung', app: 'Svelte Target' },
+  { step: 4, title: 'Extras and mobility / Extras und Mobilität', app: 'Web Components' },
+  { step: 5, title: 'Service order preview / Serviceauftrag', app: 'React Shell' }
+];
+
+const flightBookingSteps = [
+  { step: 1, title: 'Reise starten', app: 'React Shell' },
+  { step: 2, title: 'Datum wählen', app: 'Angular Calendar' },
+  { step: 3, title: 'Flugoption', app: 'Svelte Remote' },
+  { step: 4, title: 'Extras', app: 'Web Components' },
+  { step: 5, title: 'Zusammenfassung', app: 'React Shell' }
+];
+
+const isolatedFlightBookingPages = {
+  'flight-booking-angular': {
+    eyebrow: 'Isolierte Einzelseite · Angular',
+    title: 'Angular Kapazität bzw. Kalender isoliert',
+    description: 'Die Angular-Seite läuft ohne übergebenen Journey-Kontext und bleibt als eigenständiger Runtime-Baustein sichtbar.',
+    target: 'calendar-target.html?v=aftersales-capacity-1',
+    technology: 'Angular 20 + GroupUI Date Picker'
+  },
+  'flight-booking-svelte': {
+    eyebrow: 'Isolierte Einzelseite · Svelte',
+    title: 'Svelte Optionen isoliert',
+    description: 'Die Svelte-Seite bleibt als eigenständiger Zielschritt sichtbar und nutzt ohne Host-Kontext ihre Demo-Fallbacks.',
+    target: `target-svelte.html?v=${flightOptionsTargetVersion}`,
+    technology: 'Svelte Remote + GroupUI Radio Group'
+  },
+  'flight-booking-react-target': {
+    eyebrow: 'Isolierte Einzelseite · React',
+    title: 'React Ziel-App isoliert',
+    description: 'Die React-Zielseite zeigt ihr Fallback-Verhalten ohne explizite Journey-Parameter.',
+    target: 'target-react.html',
+    technology: 'React Target'
+  },
+  'flight-booking-webcomponents': {
+    eyebrow: 'Isolierte Einzelseite · Web Components',
+    title: 'Web-Components-Ziel isoliert',
+    description: 'Die Web-Component-Zielseite läuft auch ohne Shell-Kontext und bleibt als technologieauthentische Runtime sichtbar.',
+    target: `target-stencil.html?v=${flightExtrasTargetVersion}`,
+    technology: 'Native Web Component'
+  }
+};
+
+const groupUiComponentTags = [
+  'groupui-accordion',
+  'groupui-button',
+  'groupui-card',
+  'groupui-grid',
+  'groupui-grid-row',
+  'groupui-grid-col',
+  'groupui-input',
+  'groupui-radio-group',
+  'groupui-radio-button',
+  'groupui-select',
+  'groupui-select-option',
+  'groupui-stepper-horizontal',
+  'groupui-step',
+  'groupui-modal',
+  'groupui-global-top-navigation',
+  'groupui-global-top-navigation-mobile-utility-items',
+  'groupui-global-top-navigation-items',
+  'groupui-global-top-navigation-item',
+  'groupui-global-top-navigation-utility-items',
+  'groupui-global-top-navigation-utility-item',
+  'groupui-burger-menu',
+  'groupui-burger-menu-items',
+  'groupui-burger-menu-item',
+  'groupui-burger-menu-utility-items',
+  'groupui-burger-menu-utility-item',
+  'groupui-local-side-navigation',
+  'groupui-local-side-navigation-items',
+  'groupui-local-side-navigation-item'
+];
+
+const groupUiAssets = [
+  { label: 'Web Components Loader', status: 'bundled' },
+  { label: 'CSS Framework', status: 'bundled' },
+  { label: 'Theme Tokens', status: 'bundled' }
+];
 
 function currentColorMode() {
   return document.documentElement.hasAttribute('data-gui-mode') ? 'dark' : 'light';
@@ -57,7 +190,6 @@ function readViewFromUrl() {
 
 function writeViewToUrl(view, { replace = false } = {}) {
   const url = new URL(window.location.href);
-
   if (view === 'overview') {
     url.searchParams.delete('view');
   } else {
@@ -68,15 +200,41 @@ function writeViewToUrl(view, { replace = false } = {}) {
   window.history[method]({ view }, '', url);
 }
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
 const state = {
   activeView: readViewFromUrl(),
   colorMode: currentColorMode(),
-  activeContext: createContext(),
+  activeContext: createContext({
+    sourceStep: 'overview',
+    integrationMode: integrationModes.dashboardLauncher,
+    journeyType: 'aftersales',
+    serviceConcern: demoCase.serviceConcern,
+    mileageKm: demoCase.mileageKm,
+    workshopLocation: 'Berlin Alexanderplatz'
+  }),
   eventLog: createEventLog(),
   modalContext: null,
   followUpNote: null,
   receivedTransfer: null,
   embeddedModule: 'case-details',
+  broadcastChannels: {},
+  aftersales: {
+    currentStep: 1,
+    mileageKm: demoCase.mileageKm,
+    serviceConcern: demoCase.serviceConcern,
+    workshopLocation: 'Berlin Alexanderplatz',
+    selectedAppointment: null,
+    selectedPackage: null,
+    serviceExtras: null
+  },
   flightBooking: {
     currentStep: 1,
     tripType: 'one-way',
@@ -91,126 +249,21 @@ const state = {
   }
 };
 
-const flightBookingSteps = [
-  { step: 1, title: 'Reise starten', app: 'React Shell', state: 'active' },
-  { step: 2, title: 'Datum wählen', app: 'Angular Calendar', state: 'open' },
-  { step: 3, title: 'Flugoption', app: 'Svelte Remote', state: 'open' },
-  { step: 4, title: 'Extras', app: 'Web Components', state: 'open' },
-  { step: 5, title: 'Zusammenfassung', app: 'React Shell', state: 'open' }
-];
-
-const flightOptions = [
-  {
-    id: 'direct-morning',
-    label: 'Direktflug morgens',
-    carrier: 'Demo Airlines',
-    duration: '2h 25m',
-    departure: '08:35',
-    arrival: '11:00',
-    price: 219
-  },
-  {
-    id: 'via-munich',
-    label: 'Via München',
-    carrier: 'One Frontend Air',
-    duration: '4h 10m',
-    departure: '10:15',
-    arrival: '14:25',
-    price: 179
-  },
-  {
-    id: 'evening-flex',
-    label: 'Flex-Tarif abends',
-    carrier: 'GroupUI Wings',
-    duration: '2h 35m',
-    departure: '18:40',
-    arrival: '21:15',
-    price: 289
-  }
-];
-
-const flightOptionsTargetVersion = 'flight-options-6';
-const flightExtrasTargetVersion = 'flight-extras-1';
-
-const groupUiComponentTags = [
-  'groupui-button',
-  'groupui-card',
-  'groupui-grid',
-  'groupui-grid-row',
-  'groupui-grid-col',
-  'groupui-radio-group',
-  'groupui-radio-button',
-  'groupui-stepper-horizontal',
-  'groupui-step',
-  'groupui-modal',
-  'groupui-global-top-navigation',
-  'groupui-global-top-navigation-mobile-utility-items',
-  'groupui-global-top-navigation-items',
-  'groupui-global-top-navigation-item',
-  'groupui-global-top-navigation-utility-items',
-  'groupui-global-top-navigation-utility-item',
-  'groupui-burger-menu',
-  'groupui-burger-menu-items',
-  'groupui-burger-menu-item',
-  'groupui-burger-menu-utility-items',
-  'groupui-burger-menu-utility-item',
-  'groupui-local-side-navigation',
-  'groupui-local-side-navigation-items',
-  'groupui-local-side-navigation-item'
-];
-
-const groupUiAssets = [
-  {
-    label: 'Web Components Loader',
-    status: 'bundled'
-  },
-  {
-    label: 'CSS Framework',
-    status: 'bundled'
-  },
-  {
-    label: 'Theme Tokens',
-    status: 'bundled'
-  }
-];
-
-const isolatedFlightBookingPages = {
-  'flight-booking-angular': {
-    eyebrow: 'Isolierte Einzelseite · Angular',
-    title: 'Angular Kalender isoliert',
-    description: 'Der Kalender läuft hier ohne übergebenen Journey-Kontext. Die Seite dient nur zur Ansicht der Angular-App.',
-    target: 'calendar-target.html?v=isolated-angular-1',
-    technology: 'Angular 20 + GroupUI Date Picker'
-  },
-  'flight-booking-svelte': {
-    eyebrow: 'Isolierte Einzelseite · Svelte',
-    title: 'Svelte Flugoptionen isoliert',
-    description: 'Die Flugoptionen laufen hier ohne Shell-Kontext. Die Svelte-Seite nutzt ihre eigenen Demo-Werte und GroupUI Radio-Komponenten.',
-    target: `target-svelte.html?v=${flightOptionsTargetVersion}`,
-    technology: 'Svelte Remote + GroupUI Radio Group'
-  },
-  'flight-booking-react-target': {
-    eyebrow: 'Isolierte Einzelseite · React',
-    title: 'React Ziel-App isoliert',
-    description: 'Die React-Zielseite wird ohne Kontextparameter geöffnet und zeigt ihr Fallback-Verhalten.',
-    target: 'target-react.html',
-    technology: 'React Target'
-  },
-  'flight-booking-webcomponents': {
-    eyebrow: 'Isolierte Einzelseite · Web Components',
-    title: 'Web-Components-Ziel isoliert',
-    description: 'Die Web-Components-Zielseite läuft ohne Journey-Kontext und ist als einzelner Technologiebaustein sichtbar.',
-    target: `target-stencil.html?v=${flightExtrasTargetVersion}`,
-    technology: 'Native Web Component · Stencil-style'
-  }
-};
-
 const app = document.querySelector('#app');
 const modal = document.querySelector('#process-modal');
 const modalBody = document.querySelector('#process-modal-body');
-const calendarModal = document.querySelector('#calendar-modal');
-const calendarModalBody = document.querySelector('#calendar-modal-body');
+const journeyModal = document.querySelector('#calendar-modal');
+const journeyModalBody = document.querySelector('#calendar-modal-body');
 const eventBridge = createContextEventBridge(state.eventLog);
+
+function centerDialog(dialogElement) {
+  dialogElement.style.position = 'fixed';
+  dialogElement.style.inset = 'auto auto auto auto';
+  dialogElement.style.top = '50%';
+  dialogElement.style.left = '50%';
+  dialogElement.style.margin = '0';
+  dialogElement.style.transform = 'translate(-50%, -50%)';
+}
 
 function collectGroupUiComponentStatus() {
   return groupUiComponentTags.map((tagName) => ({
@@ -222,8 +275,8 @@ function collectGroupUiComponentStatus() {
 async function updateGroupUiRuntimeStatus() {
   const components = collectGroupUiComponentStatus();
   const assets = groupUiAssets;
-
   const nextRuntime = { components, assets };
+
   if (JSON.stringify(state.groupUiRuntime) !== JSON.stringify(nextRuntime)) {
     state.groupUiRuntime = nextRuntime;
     render();
@@ -237,17 +290,322 @@ const navigate = createNavigationTrigger((targetView, context) => {
   render();
 }, state.eventLog);
 
+function groupuiCard(content, className = '') {
+  return `<groupui-card padding="24px" class="${className}">${content}</groupui-card>`;
+}
+
+function createAftersalesContext(overrides = {}) {
+  const appointment = state.aftersales.selectedAppointment || {};
+  const selectedPackage = state.aftersales.selectedPackage || {};
+  const serviceExtras = state.aftersales.serviceExtras || {};
+  const totalPrice = (selectedPackage.estimatedPrice || 0) + (serviceExtras.totalPrice || 0);
+
+  return createContext({
+    ...state.activeContext,
+    journeyType: 'aftersales',
+    sourceApp: 'react-shell',
+    sourceStep: 'aftersales-shell',
+    targetApp: 'service-order-platform',
+    integrationMode: integrationModes.processStep,
+    serviceConcern: state.aftersales.serviceConcern,
+    mileageKm: state.aftersales.mileageKm,
+    appointmentDate: appointment.date || '',
+    appointmentSlotId: appointment.id || '',
+    workshopLocation: appointment.location || state.aftersales.workshopLocation,
+    selectedAppointmentTitle: appointment.title || '',
+    servicePackageId: selectedPackage.id || '',
+    servicePackageLabel: selectedPackage.label || '',
+    estimatedDurationMinutes: selectedPackage.estimatedDurationMinutes || appointment.durationMinutes || 0,
+    estimatedPrice: totalPrice,
+    partsStatus: serviceExtras.partsStatus || 'check-pending',
+    campaignStatus: serviceExtras.campaignStatus || 'no-active-campaign',
+    mobilityNeed: serviceExtras.mobilityNeed || 'none',
+    followUpRequired: Boolean(serviceExtras.followUpRequired),
+    selectedServiceExtras: serviceExtras.selectedExtras || [],
+    ...overrides
+  });
+}
+
+function createFlightBookingContext(overrides = {}) {
+  const booking = state.flightBooking;
+
+  return createContext({
+    journeyType: 'flight-booking',
+    sourceApp: 'react-shell',
+    sourceStep: 'flight-booking-step-1',
+    targetApp: 'angular-calendar-target',
+    integrationMode: integrationModes.processStep,
+    origin: booking.origin,
+    destination: booking.destination,
+    tripType: booking.tripType,
+    passengers: Number(booking.passengers),
+    travelClass: booking.travelClass,
+    departureDate: booking.departureDate || null,
+    selectedDateTitle: booking.selectedDateTitle || null,
+    flightBooking: {
+      ...booking
+    },
+    ...overrides
+  });
+}
+
+function contextSummaryRows(context) {
+  return [
+    ['Journey', context.journeyType || 'n/a'],
+    ['Case', context.caseId],
+    ['Vehicle', context.vehicleModel || context.vehicleLabel || 'n/a'],
+    ['Source', context.sourceApp],
+    ['Step', context.sourceStep],
+    ['Integration', context.integrationMode],
+    ['Language', context.language]
+  ];
+}
+
+function contextPanel(context = state.activeContext) {
+  return groupuiCard(`
+    <groupui-tag>Shared Context</groupui-tag>
+    <groupui-headline heading="h3">Serialized payload / Serialisierter Payload</groupui-headline>
+    <groupui-text>
+      Host und Targets greifen auf denselben serialisierbaren Vertrag zu. Neue Schritte reichern den Kontext explizit an,
+      statt stillen Zustand zu teilen.
+    </groupui-text>
+    <div class="groupui-info-list">
+      ${contextSummaryRows(context).map(([label, value]) => `
+        <div>
+          <groupui-text weight="bold">${label}</groupui-text>
+          <groupui-text>${escapeHtml(value || 'n/a')}</groupui-text>
+        </div>
+      `).join('')}
+    </div>
+    <pre class="context-snippet">${escapeHtml(JSON.stringify(context, null, 2))}</pre>
+  `, 'context-panel');
+}
+
+function statusBadge(ok) {
+  return `<groupui-tag variant="secondary">${ok ? 'OK' : 'Offen'}</groupui-tag>`;
+}
+
+function renderGroupUiRuntimeCard() {
+  const components = state.groupUiRuntime.components.length
+    ? state.groupUiRuntime.components
+    : collectGroupUiComponentStatus();
+  const registeredCount = components.filter((component) => component.registered).length;
+  const assets = state.groupUiRuntime.assets.length
+    ? state.groupUiRuntime.assets
+    : groupUiAssets;
+
+  return groupuiCard(`
+    <groupui-tag>GroupUI Runtime</groupui-tag>
+    <groupui-headline heading="h3">Design-system proof / Runtime proof</groupui-headline>
+    <groupui-text>
+      ${registeredCount}/${components.length} Web Components sind registriert. Loader, CSS-Framework und Tokens laufen über denselben Vite-Build wie die Journey selbst.
+    </groupui-text>
+    <groupui-grid type="fluid" margin-type="custom" margin="0" gutter="16px" class="runtime-checks">
+      <groupui-grid-row>
+        ${components.map((component) => `
+          <groupui-grid-col xs="12" s="12" m="6" l="4" xl="4" xxl="4">
+            <div><groupui-text>${component.tagName}</groupui-text>${statusBadge(component.registered)}</div>
+          </groupui-grid-col>
+        `).join('')}
+        ${assets.map((asset) => `
+          <groupui-grid-col xs="12" s="12" m="6" l="4" xl="4" xxl="4">
+            <div><groupui-text>${asset.label}</groupui-text><groupui-tag variant="secondary">${asset.status}</groupui-tag></div>
+          </groupui-grid-col>
+        `).join('')}
+      </groupui-grid-row>
+    </groupui-grid>
+  `, 'runtime-card');
+}
+
+function aftersalesContextForStep(sourceStep, integrationMode, targetApp) {
+  return createAftersalesContext({
+    sourceStep,
+    integrationMode,
+    targetApp
+  });
+}
+
+function createFlightOptionsTargetUrl(context) {
+  const base = import.meta.env.BASE_URL;
+  return `${window.location.origin}${base}target-svelte.html?context=${serializeContext(context)}&v=${flightOptionsTargetVersion}`;
+}
+
+function createFlightExtrasTargetUrl(context) {
+  const base = import.meta.env.BASE_URL;
+  return `${window.location.origin}${base}target-stencil.html?context=${serializeContext(context)}&v=${flightExtrasTargetVersion}`;
+}
+
+function openFlightCalendarModal(context) {
+  const isAftersales = context.journeyType === 'aftersales';
+  const base = import.meta.env.BASE_URL;
+  const url = `${window.location.origin}${base}calendar-target.html?context=${serializeContext(context)}&v=aftersales-capacity-2`;
+
+  journeyModalBody.innerHTML = `
+    <div class="calendar-modal-shell">
+      <div class="calendar-modal-header">
+        <div>
+          <groupui-tag>${isAftersales ? 'Schritt 2 · Angular Workshop Capacity' : 'Schritt 2 · Angular Calendar'}</groupui-tag>
+          <groupui-headline heading="h3">${isAftersales ? 'Werkstattkapazität auswählen / Choose workshop capacity' : 'Reisedatum wählen'}</groupui-headline>
+          <groupui-text>
+            ${isAftersales
+              ? 'Die React Shell bleibt Eigentümerin des Journey-State. Angular liefert explizit den gewählten Werkstattslot zurück.'
+              : 'Die React Shell bleibt sichtbar. Der Kalender läuft als echte Angular-App im iframe.'}
+          </groupui-text>
+        </div>
+        <groupui-button variant="secondary" type="button" data-action="close-journey-modal">Schließen</groupui-button>
+      </div>
+      <iframe
+        class="calendar-modal-frame"
+        title="${isAftersales ? 'Angular Aftersales Appointment App' : 'Angular Calendar App'}"
+        src="${url}"
+      ></iframe>
+    </div>
+  `;
+
+  recordEvent(state.eventLog, isAftersales ? 'open-aftersales-calendar-modal' : 'open-flight-calendar-modal', {
+    url,
+    context,
+    target: 'calendar-target.html'
+  });
+  journeyModal.showModal();
+  centerDialog(journeyModal);
+}
+
+function openFlightOptionsModal(context) {
+  const isAftersales = context.journeyType === 'aftersales';
+  const url = createFlightOptionsTargetUrl(context);
+
+  journeyModalBody.innerHTML = `
+    <div class="calendar-modal-shell">
+      <div class="calendar-modal-header">
+        <div>
+          <groupui-tag>${isAftersales ? 'Schritt 3 · Svelte Recommendations' : 'Schritt 3 · Svelte Remote'}</groupui-tag>
+          <groupui-headline heading="h3">${isAftersales ? 'Servicepaket auswählen / Choose service package' : 'Flugoption auswählen'}</groupui-headline>
+          <groupui-text>
+            ${isAftersales
+              ? 'Svelte liefert eine leichte, reaktive Auswahloberfläche für Paketempfehlungen und sendet das Ergebnis strukturiert an die Shell zurück.'
+              : 'Die React Shell bleibt sichtbar. Die Flugauswahl läuft als Svelte-Remote im iframe.'}
+          </groupui-text>
+        </div>
+        <groupui-button variant="secondary" type="button" data-action="close-journey-modal">Schließen</groupui-button>
+      </div>
+      <iframe
+        class="calendar-modal-frame"
+        title="${isAftersales ? 'Svelte Aftersales Package App' : 'Svelte Flight Options App'}"
+        src="${url}"
+      ></iframe>
+    </div>
+  `;
+
+  recordEvent(state.eventLog, isAftersales ? 'open-aftersales-packages-modal' : 'open-flight-options-modal', {
+    url,
+    context,
+    target: 'target-svelte.html'
+  });
+  journeyModal.showModal();
+  centerDialog(journeyModal);
+}
+
+function openFlightExtrasModal(context) {
+  const isAftersales = context.journeyType === 'aftersales';
+  const url = createFlightExtrasTargetUrl(context);
+
+  journeyModalBody.innerHTML = `
+    <div class="calendar-modal-shell">
+      <div class="calendar-modal-header">
+        <div>
+          <groupui-tag>${isAftersales ? 'Schritt 4 · Web Components Extras' : 'Schritt 4 · Native Web Component'}</groupui-tag>
+          <groupui-headline heading="h3">${isAftersales ? 'Extras und Mobilität ändern / Change extras and mobility' : 'Reise-Extras ändern'}</groupui-headline>
+          <groupui-text>
+            ${isAftersales
+              ? 'Das Web-Component-Target hält seinen eigenen UI-State und gibt Extras, Teile- und Mobilitätsentscheidungen explizit an die Shell zurück.'
+              : 'Die Web-Components-Ziel-App läuft im iframe und gibt die Extras an die React Shell zurück.'}
+          </groupui-text>
+        </div>
+        <groupui-button variant="secondary" type="button" data-action="close-journey-modal">Schließen</groupui-button>
+      </div>
+      <iframe
+        class="calendar-modal-frame"
+        title="${isAftersales ? 'Web Component Aftersales Extras App' : 'Web Component Flight Extras App'}"
+        src="${url}"
+      ></iframe>
+    </div>
+  `;
+
+  recordEvent(state.eventLog, isAftersales ? 'open-aftersales-extras-modal' : 'open-flight-extras-modal', {
+    url,
+    context,
+    target: 'target-stencil.html'
+  });
+  journeyModal.showModal();
+  centerDialog(journeyModal);
+}
+
+function closeJourneyModal() {
+  journeyModal.close();
+  journeyModalBody.innerHTML = '';
+  recordEvent(state.eventLog, 'journey-modal-close', { sourceApp: 'react-shell' });
+}
+
+function closeJourneyModalIfOpen() {
+  if (journeyModal.open) {
+    closeJourneyModal();
+  }
+}
+
 function receiveRemotePayload(payload, eventType) {
   state.followUpNote = payload.note;
   state.receivedTransfer = payload;
 
   if (payload.type === 'appointment-transfer' && payload.appointment) {
-    state.flightBooking = {
-      ...state.flightBooking,
-      departureDate: payload.appointment.date,
-      selectedDateTitle: payload.appointment.title,
-      currentStep: 3
+    if (payload.context?.journeyType === 'flight-booking') {
+      state.flightBooking = {
+        ...state.flightBooking,
+        departureDate: payload.appointment.date,
+        selectedDateTitle: payload.appointment.title,
+        currentStep: 3
+      };
+      state.activeContext = createFlightBookingContext({
+        sourceStep: 'flight-date-selected',
+        selectedAppointmentDate: payload.appointment.date,
+        selectedAppointmentTitle: payload.appointment.title
+      });
+    } else {
+      state.aftersales = {
+        ...state.aftersales,
+        currentStep: 2,
+        workshopLocation: payload.appointment.location || state.aftersales.workshopLocation,
+        selectedAppointment: payload.appointment
+      };
+      state.activeContext = createAftersalesContext({
+        sourceStep: 'aftersales-appointment-selected',
+        integrationMode: payload.context?.integrationMode || integrationModes.modal
+      });
+    }
+  }
+
+  if (payload.type === 'service-package-transfer' && payload.servicePackage) {
+    state.aftersales = {
+      ...state.aftersales,
+      currentStep: 4,
+      selectedPackage: payload.servicePackage
     };
+    state.activeContext = createAftersalesContext({
+      sourceStep: 'service-package-selected',
+      integrationMode: payload.context?.integrationMode || integrationModes.modal
+    });
+  }
+
+  if (payload.type === 'service-extras-transfer' && payload.serviceExtras) {
+    state.aftersales = {
+      ...state.aftersales,
+      currentStep: 5,
+      serviceExtras: payload.serviceExtras
+    };
+    state.activeContext = createAftersalesContext({
+      sourceStep: 'service-extras-selected',
+      integrationMode: payload.context?.integrationMode || integrationModes.embeddedWorkspace
+    });
   }
 
   if (payload.type === 'flight-option-transfer' && payload.flightOption) {
@@ -269,12 +627,6 @@ function receiveRemotePayload(payload, eventType) {
   recordEvent(state.eventLog, eventType, payload);
 }
 
-const openModal = createModalTrigger((context) => {
-  state.modalContext = createContext(context);
-  renderModal();
-  modal.showModal();
-}, state.eventLog);
-
 window.addEventListener('onefe:context-received', (event) => {
   state.activeContext = createContext(event.detail);
   recordEvent(state.eventLog, 'custom-event-received', event.detail);
@@ -289,82 +641,23 @@ window.addEventListener('onefe:follow-up-return', (event) => {
 });
 
 window.addEventListener('message', (event) => {
-  if (event.data && (event.data.type === 'follow-up-return' || event.data.type === 'appointment-transfer' || event.data.type === 'flight-option-transfer' || event.data.type === 'flight-extras-transfer')) {
+  const supportedTypes = [
+    'follow-up-return',
+    'appointment-transfer',
+    'service-package-transfer',
+    'service-extras-transfer',
+    'flight-option-transfer',
+    'flight-extras-transfer'
+  ];
+
+  if (event.data && supportedTypes.includes(event.data.type)) {
     receiveRemotePayload(event.data, 'postmessage-received');
-    if ((event.data.type === 'appointment-transfer' || event.data.type === 'flight-option-transfer' || event.data.type === 'flight-extras-transfer') && calendarModal.open) {
-      calendarModal.close();
-      calendarModalBody.innerHTML = '';
+    if (event.data.type !== 'follow-up-return') {
+      closeJourneyModalIfOpen();
     }
     render();
   }
 });
-
-function groupuiCard(content, className = '') {
-  return `<groupui-card padding="24px" class="${className}">${content}</groupui-card>`;
-}
-
-function contextSummaryRows(context) {
-  return [
-    ['Case', context.caseId],
-    ['Quelle', context.sourceApp],
-    ['Schritt', context.sourceStep],
-    ['Integration', context.integrationMode]
-  ];
-}
-
-function contextPanel(context = state.activeContext) {
-  return groupuiCard(`
-      <groupui-tag>Aktueller Kontext</groupui-tag>
-      <groupui-headline heading="h3">Shared Context Payload</groupui-headline>
-      <groupui-text>Der gleiche Payload wird fuer Launchpad, Modal, Navigation, Embedded Workspace und Integrated Experience verwendet.</groupui-text>
-      <div class="groupui-info-list">
-        ${contextSummaryRows(context).map(([label, value]) => `
-          <div>
-            <groupui-text weight="bold">${label}</groupui-text>
-            <groupui-text>${value || 'n/a'}</groupui-text>
-          </div>
-        `).join('')}
-      </div>
-  `, 'context-panel');
-}
-
-function statusBadge(ok) {
-  return `<groupui-tag variant="secondary">${ok ? 'OK' : 'Offen'}</groupui-tag>`;
-}
-
-function renderGroupUiRuntimeCard() {
-  const components = state.groupUiRuntime.components.length
-    ? state.groupUiRuntime.components
-    : collectGroupUiComponentStatus();
-  const registeredCount = components.filter((component) => component.registered).length;
-  const assets = state.groupUiRuntime.assets.length
-    ? state.groupUiRuntime.assets
-    : groupUiAssets;
-
-  return groupuiCard(`
-    <groupui-tag>GroupUI Runtime</groupui-tag>
-    <groupui-headline heading="h3">Echte GroupUI-Nutzung</groupui-headline>
-    <groupui-text>${registeredCount}/${components.length} Web Components sind im Browser registriert. Loader, CSS Framework und Theme Tokens sind im Vite-Build gebündelt.</groupui-text>
-    <groupui-grid type="fluid" margin-type="custom" margin="0" gutter="16px" class="runtime-checks">
-      <groupui-grid-row>
-      ${components.map((component) => `
-        <groupui-grid-col xs="12" s="12" m="6" l="4" xl="4" xxl="4">
-          <div><groupui-text>${component.tagName}</groupui-text>${statusBadge(component.registered)}</div>
-        </groupui-grid-col>
-      `).join('')}
-      ${assets.map((asset) => `
-        <groupui-grid-col xs="12" s="12" m="6" l="4" xl="4" xxl="4">
-          <div><groupui-text>${asset.label}</groupui-text><groupui-tag variant="secondary">${asset.status}</groupui-tag></div>
-        </groupui-grid-col>
-      `).join('')}
-      </groupui-grid-row>
-    </groupui-grid>
-  `, 'runtime-card');
-}
-
-function previewContextUrl(context) {
-  return `${window.location.origin}${window.location.pathname}?context=${serializeContext(context)}`;
-}
 
 function isNavigationSectionActive(item) {
   return state.activeView === item.id || item.children?.some((child) => child.id === state.activeView);
@@ -393,19 +686,19 @@ function renderNavigation() {
   return `
     <groupui-local-side-navigation class="shell-nav" manual-mode aria-label="Bereichsnavigation">
       <groupui-local-side-navigation-items>
-      ${primaryViews.map((item) => {
-        const childActive = item.children?.some((child) => child.id === state.activeView);
-        return `
-          <groupui-local-side-navigation-item data-nav="${item.id}" ${state.activeView === item.id ? 'active' : ''} ${item.children && (state.activeView === item.id || childActive) ? 'open' : ''}>
-            <div slot="label">${item.label}</div>
-            ${item.children ? item.children.map((child) => `
-              <groupui-local-side-navigation-item data-nav="${child.id}" ${state.activeView === child.id ? 'active' : ''}>
-                <div slot="label">${child.label}</div>
-              </groupui-local-side-navigation-item>
-            `).join('') : ''}
-          </groupui-local-side-navigation-item>
-        `;
-      }).join('')}
+        ${primaryViews.map((item) => {
+          const childActive = item.children?.some((child) => child.id === state.activeView);
+          return `
+            <groupui-local-side-navigation-item data-nav="${item.id}" ${state.activeView === item.id ? 'active' : ''} ${item.children && (state.activeView === item.id || childActive) ? 'open' : ''}>
+              <div slot="label">${item.label}</div>
+              ${item.children ? item.children.map((child) => `
+                <groupui-local-side-navigation-item data-nav="${child.id}" ${state.activeView === child.id ? 'active' : ''}>
+                  <div slot="label">${child.label}</div>
+                </groupui-local-side-navigation-item>
+              `).join('') : ''}
+            </groupui-local-side-navigation-item>
+          `;
+        }).join('')}
       </groupui-local-side-navigation-items>
     </groupui-local-side-navigation>
   `;
@@ -420,44 +713,32 @@ function renderHeader() {
   return `
     <header>
       <groupui-global-top-navigation breakpoint="l" manual-mode aria-label="Hauptnavigation">
-        <groupui-brand-logo type="application">One Frontend Demonstrator</groupui-brand-logo>
+        <groupui-brand-logo type="application">Volkswagen Aftersales Platform Demonstrator</groupui-brand-logo>
         <groupui-global-top-navigation-mobile-utility-items>
           <groupui-burger-menu a11y-label-open-button="Navigation öffnen" a11y-label-close-button="Navigation schließen">
             <groupui-burger-menu-items>
-              <groupui-burger-menu-item data-nav="overview" ${isTopNavigationActive('overview') ? 'active' : ''}>
-                <div slot="label">Overview</div>
-              </groupui-burger-menu-item>
-              <groupui-burger-menu-item data-nav="flight-booking" ${isTopNavigationActive('flight-booking') ? 'active' : ''}>
-                <div slot="label">Flight Booking</div>
-              </groupui-burger-menu-item>
-              <groupui-burger-menu-item data-nav="comparison" ${isTopNavigationActive('comparison') ? 'active' : ''}>
-                <div slot="label">Zielbilder</div>
-              </groupui-burger-menu-item>
-              <groupui-burger-menu-item data-nav="patterns" ${isTopNavigationActive('patterns') ? 'active' : ''}>
-                <div slot="label">Integrationsmuster</div>
-              </groupui-burger-menu-item>
+              <groupui-burger-menu-item data-nav="overview" ${isTopNavigationActive('overview') ? 'active' : ''}><div slot="label">Overview</div></groupui-burger-menu-item>
+              <groupui-burger-menu-item data-nav="aftersales-journey" ${isTopNavigationActive('aftersales-journey') ? 'active' : ''}><div slot="label">Aftersales Journey</div></groupui-burger-menu-item>
+              <groupui-burger-menu-item data-nav="flight-booking" ${isTopNavigationActive('flight-booking') ? 'active' : ''}><div slot="label">Flight Booking</div></groupui-burger-menu-item>
+              <groupui-burger-menu-item data-nav="technology-overview" ${isTopNavigationActive('technology-overview') ? 'active' : ''}><div slot="label">Technology</div></groupui-burger-menu-item>
+              <groupui-burger-menu-item data-nav="implementation" ${isTopNavigationActive('implementation') ? 'active' : ''}><div slot="label">Implementation</div></groupui-burger-menu-item>
+              <groupui-burger-menu-item data-nav="patterns" ${isTopNavigationActive('patterns') ? 'active' : ''}><div slot="label">Patterns</div></groupui-burger-menu-item>
             </groupui-burger-menu-items>
             <groupui-burger-menu-utility-items>
-              <groupui-burger-menu-utility-item icon="${colorModeIconName}" icon-source="${colorModeIcon}" a11y-label-icon="${colorModeLabel}" data-action="toggle-color-mode">
-                <div slot="label">${colorModeLabel}</div>
-              </groupui-burger-menu-utility-item>
-              <groupui-burger-menu-utility-item icon="clock-24" data-action="emit-context">
-                <div slot="label">Custom Event senden</div>
-              </groupui-burger-menu-utility-item>
-              <groupui-burger-menu-utility-item icon="rocket-24" data-nav="patterns">
-                <div slot="label">Integrationsmuster anzeigen</div>
-              </groupui-burger-menu-utility-item>
-              <groupui-burger-menu-utility-item icon="user-24" data-action="go-debug">
-                <div slot="label">Context ansehen</div>
-              </groupui-burger-menu-utility-item>
+              <groupui-burger-menu-utility-item icon="${colorModeIconName}" icon-source="${colorModeIcon}" a11y-label-icon="${colorModeLabel}" data-action="toggle-color-mode"><div slot="label">${colorModeLabel}</div></groupui-burger-menu-utility-item>
+              <groupui-burger-menu-utility-item icon="clock-24" data-action="emit-context"><div slot="label">Context-Event senden</div></groupui-burger-menu-utility-item>
+              <groupui-burger-menu-utility-item icon="rocket-24" data-nav="patterns"><div slot="label">Integrationsmuster</div></groupui-burger-menu-utility-item>
+              <groupui-burger-menu-utility-item icon="user-24" data-action="go-debug"><div slot="label">Debug</div></groupui-burger-menu-utility-item>
             </groupui-burger-menu-utility-items>
           </groupui-burger-menu>
         </groupui-global-top-navigation-mobile-utility-items>
         <groupui-global-top-navigation-items>
           <groupui-global-top-navigation-item data-nav="overview" ${isTopNavigationActive('overview') ? 'active' : ''}>Overview</groupui-global-top-navigation-item>
+          <groupui-global-top-navigation-item data-nav="aftersales-journey" ${isTopNavigationActive('aftersales-journey') ? 'active' : ''}>Aftersales Journey</groupui-global-top-navigation-item>
           <groupui-global-top-navigation-item data-nav="flight-booking" ${isTopNavigationActive('flight-booking') ? 'active' : ''}>Flight Booking</groupui-global-top-navigation-item>
-          <groupui-global-top-navigation-item data-nav="comparison" ${isTopNavigationActive('comparison') ? 'active' : ''}>Zielbilder</groupui-global-top-navigation-item>
-          <groupui-global-top-navigation-item data-nav="patterns" ${isTopNavigationActive('patterns') ? 'active' : ''}>Integrationsmuster</groupui-global-top-navigation-item>
+          <groupui-global-top-navigation-item data-nav="technology-overview" ${isTopNavigationActive('technology-overview') ? 'active' : ''}>Technology Overview</groupui-global-top-navigation-item>
+          <groupui-global-top-navigation-item data-nav="implementation" ${isTopNavigationActive('implementation') ? 'active' : ''}>Implementation</groupui-global-top-navigation-item>
+          <groupui-global-top-navigation-item data-nav="patterns" ${isTopNavigationActive('patterns') ? 'active' : ''}>Patterns</groupui-global-top-navigation-item>
         </groupui-global-top-navigation-items>
         <groupui-global-top-navigation-utility-items>
           <groupui-global-top-navigation-utility-item icon="${colorModeIconName}" icon-source="${colorModeIcon}" a11y-label-icon="${colorModeLabel}" aria-label="${colorModeLabel}" data-action="toggle-color-mode"></groupui-global-top-navigation-utility-item>
@@ -477,177 +758,499 @@ function renderHeader() {
 }
 
 function renderOverview() {
-  const briefingItems = [
-    {
-      tag: 'Nutzerperspektive',
-      title: 'Journey, Interaktion, Ergebnis',
-      rows: [
-        ['Journey', demoCase.title],
-        ['Interaktion', 'Link, Modal, Navigation und Inline-Prozess'],
-        ['Ergebnis', 'sichtbarer Remote-Status und Context-Weitergabe']
-      ]
-    },
-    {
-      tag: 'Integrationsperspektive',
-      title: 'Link / Embedded / Integrated',
-      rows: [
-        ['Link / Launchpad', 'neue Ziel-App mit Kontext'],
-        ['Embedded', 'Module bleiben in persistenter Shell'],
-        ['Integrated', 'Remote-Grenzen werden nicht inszeniert'],
-        ['Muster', 'Modal, Inline, Navigation und Prozessschritt']
-      ]
-    },
-    {
-      tag: 'Technologieperspektive',
-      title: 'Host vs. Remote',
-      rows: [
-        ['Host', 'Shell, Navigation, Modal und Event Bridge'],
-        ['Remote', 'Angular-Slot, Web Component und Vanilla Result'],
-        ['Technologien', 'React / Angular / Web Component / Vanilla']
-      ]
-    }
+  const keyMetrics = [
+    { value: '4', label: 'Runtimes im Journey-Verbund' },
+    { value: '3', label: 'sichtbare Handover-Kanäle' },
+    { value: '11', label: 'stabile Navigations-Views' }
   ];
 
   return `
     <section class="view overview-view">
       <groupui-grid type="fluid" margin-type="custom" margin="0" gutter="24px" class="overview-hero-grid" aria-label="Intro und Kennzahlen">
         <groupui-grid-row>
-          <groupui-grid-col xs="12" s="12" m="6" l="4" xl="4" xxl="4">
+          <groupui-grid-col xs="12" s="12" m="12" l="7" xl="7" xxl="7">
             <groupui-card padding="32px" class="overview-hero-main">
               <div class="hero-copy">
-                <groupui-tag>Grundlagen</groupui-tag>
-                <groupui-headline heading="h1">Die Integration ist massgeschneidert auf die Bedürfnisse der Nutzer.</groupui-headline>
-                <groupui-text class="hero-lead">Der Demonstrator zeigt, wie eine nahtlose fachliche Journey über unterschiedliche Integrationsansätze umgesetzt wird - mit konsistentem Kontext und diversen Frontend-Technologien.</groupui-text>
+                <groupui-tag>Volkswagen Aftersales Platform</groupui-tag>
+                <groupui-headline heading="h1">Service appointment orchestration across real frontend runtimes</groupui-headline>
+                <groupui-text class="hero-lead">
+                  Der Demonstrator priorisiert jetzt die Werkstatt- und Service-Journey. React bleibt Host und Kontinuitätslayer,
+                  während Angular, Svelte und Web Components echte Prozessschritte mit expliziter Kontextübergabe übernehmen.
+                </groupui-text>
+                <div class="hero-actions">
+                  <groupui-button fullwidth data-nav="aftersales-journey">Aftersales Journey öffnen</groupui-button>
+                  <groupui-button fullwidth variant="secondary" data-nav="technology-overview">Technology Overview</groupui-button>
+                  <groupui-button fullwidth variant="secondary" data-nav="flight-booking">Flight Booking als Referenz</groupui-button>
+                </div>
               </div>
             </groupui-card>
           </groupui-grid-col>
 
-          <groupui-grid-col xs="12" s="12" m="6" l="4" xl="4" xxl="4">
-            <groupui-card padding="32px" class="overview-hero-main">
-              <div class="hero-copy">
-                <groupui-tag>ONE Frontend</groupui-tag>
-                <groupui-headline heading="h3">Funktionen am richtigen Touchpoint</groupui-headline>
-                <groupui-text weight="bold" class="hero-quote">ONE Frontend bringt die richtigen Funktionselemente genau an den prozessualen Touchpoint, an dem sie benötigt werden - nahtlos, kontextbezogen und ohne wahrnehmbaren Systembruch.</groupui-text>
-                <div class="hero-actions">
-                  <groupui-button size="s" fullwidth data-action="linked-in-shell">Linked Integration Demo</groupui-button>
-                  <groupui-button size="s" fullwidth variant="secondary" data-nav="flight-booking">Flight Booking starten</groupui-button>
-                  <groupui-button size="s" fullwidth variant="secondary" data-nav="comparison">Zielbilder vergleichen</groupui-button>
-                  <groupui-button size="s" fullwidth variant="secondary" data-nav="debug">Event Log ansehen</groupui-button>
+          <groupui-grid-col xs="12" s="12" m="12" l="5" xl="5" xxl="5">
+            <groupui-card padding="32px" class="overview-metrics-card">
+              <groupui-tag>Platform briefing</groupui-tag>
+              <groupui-headline heading="h3">Was die Demo sichtbar macht</groupui-headline>
+              <div class="hero-metrics">
+                ${keyMetrics.map((item) => `
+                  <div>
+                    <groupui-text weight="bold" class="metric-value">${item.value}</groupui-text>
+                    <groupui-text size="caption">${item.label}</groupui-text>
+                  </div>
+                `).join('')}
+                <div class="metric-list">
+                  <div class="metric-list-row"><groupui-text size="caption" weight="bold">Host</groupui-text><groupui-text size="caption">Journey-State, Navigation, Summary</groupui-text></div>
+                  <div class="metric-list-row"><groupui-text size="caption" weight="bold">Targets</groupui-text><groupui-text size="caption">Kapazität, Pakete, Extras</groupui-text></div>
+                  <div class="metric-list-row"><groupui-text size="caption" weight="bold">Contracts</groupui-text><groupui-text size="caption">URL, BroadcastChannel, postMessage</groupui-text></div>
                 </div>
               </div>
             </groupui-card>
+          </groupui-grid-col>
+        </groupui-grid-row>
+      </groupui-grid>
+
+      <groupui-grid type="fluid" margin-type="custom" margin="0" gutter="24px" class="overview-tile-grid" aria-label="Story und Szenarien">
+        <groupui-grid-row>
+          <groupui-grid-col xs="12" s="12" m="6" l="4" xl="4" xxl="4">
+            ${groupuiCard(`
+              <groupui-tag>Primary case</groupui-tag>
+              <groupui-headline heading="h3">${demoCase.title}</groupui-headline>
+              <div class="groupui-info-list">
+                <div><groupui-text weight="bold">Vehicle</groupui-text><groupui-text>${escapeHtml(demoCase.vehicle)}</groupui-text></div>
+                <div><groupui-text weight="bold">VIN</groupui-text><groupui-text>${escapeHtml(demoCase.vin)}</groupui-text></div>
+                <div><groupui-text weight="bold">Concern</groupui-text><groupui-text>${escapeHtml(demoCase.serviceConcern)}</groupui-text></div>
+                <div><groupui-text weight="bold">Next action</groupui-text><groupui-text>${escapeHtml(demoCase.nextAction)}</groupui-text></div>
+              </div>
+              <groupui-button data-nav="aftersales-journey">Journey starten</groupui-button>
+            `, 'overview-tile-card')}
+          </groupui-grid-col>
+
+          <groupui-grid-col xs="12" s="12" m="6" l="4" xl="4" xxl="4">
+            ${groupuiCard(`
+              <groupui-tag>Journey ownership</groupui-tag>
+              <groupui-headline heading="h3">Wer besitzt welchen Schritt?</groupui-headline>
+              <div class="groupui-step-list">
+                ${aftersalesSteps.map((item) => `
+                  <div>
+                    <groupui-tag>${item.step}</groupui-tag>
+                    <div>
+                      <groupui-text weight="bold">${item.title}</groupui-text>
+                      <groupui-text>${item.app}</groupui-text>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            `, 'overview-tile-card')}
           </groupui-grid-col>
 
           <groupui-grid-col xs="12" s="12" m="12" l="4" xl="4" xxl="4">
-            <groupui-card padding="32px" class="overview-metrics-card">
-              <groupui-tag>Basis Info</groupui-tag>
-              <groupui-headline heading="h3">Demo auf einen Blick</groupui-headline>
-              <div class="hero-metrics" aria-label="Briefing-Kennzahlen">
-                <div>
-                  <groupui-text weight="bold" class="metric-value">3</groupui-text>
-                  <groupui-text size="caption">Blickwinkel auf Integration</groupui-text>
-                  <div class="metric-list" aria-label="Blickwinkel auf Integration">
-                    <div class="metric-list-row"><groupui-text size="caption" weight="bold">1.</groupui-text><groupui-text size="caption">Fachliche Journey</groupui-text></div>
-                    <div class="metric-list-row"><groupui-text size="caption" weight="bold">2.</groupui-text><groupui-text size="caption">Interaktionsform</groupui-text></div>
-                    <div class="metric-list-row"><groupui-text size="caption" weight="bold">3.</groupui-text><groupui-text size="caption">Technologische Umsetzung</groupui-text></div>
-                  </div>
-                </div>
-                <div>
-                  <groupui-text weight="bold" class="metric-value">3</groupui-text>
-                  <groupui-text size="caption">Integrationsbilder</groupui-text>
-                  <div class="metric-list" aria-label="Integrationsbilder">
-                    <div class="metric-list-row"><groupui-text size="caption" weight="bold">1.</groupui-text><groupui-text size="caption">Launch / Navigation</groupui-text></div>
-                    <div class="metric-list-row"><groupui-text size="caption" weight="bold">2.</groupui-text><groupui-text size="caption">Embedded / Modal</groupui-text></div>
-                    <div class="metric-list-row"><groupui-text size="caption" weight="bold">3.</groupui-text><groupui-text size="caption">Integrated / Inline</groupui-text></div>
-                  </div>
-                </div>
-                <div><groupui-text weight="bold" class="metric-value">1</groupui-text><groupui-text size="caption">Context Payload</groupui-text></div>
-              </div>
-            </groupui-card>
+            ${groupuiCard(`
+              <groupui-tag>${flightReferenceFlow.eyebrow}</groupui-tag>
+              <groupui-headline heading="h3">${flightReferenceFlow.title}</groupui-headline>
+              <groupui-text>${flightReferenceFlow.summary}</groupui-text>
+              <groupui-button variant="secondary" data-nav="flight-booking">Referenzfluss ansehen</groupui-button>
+            `, 'overview-tile-card reference-flow-card')}
           </groupui-grid-col>
         </groupui-grid-row>
       </groupui-grid>
 
-      <groupui-grid type="fluid" margin-type="custom" margin="0" gutter="24px" class="briefing-grid" aria-label="Was der Demonstrator sichtbar machen muss">
-        <groupui-grid-row>
-          ${briefingItems.map((item) => `
-            <groupui-grid-col xs="12" s="12" m="6" l="4" xl="4" xxl="4">
-              ${groupuiCard(`
-                <groupui-tag>${item.tag}</groupui-tag>
-                <groupui-headline heading="h3">${item.title}</groupui-headline>
-                <div class="groupui-info-list">
-                  ${item.rows.map(([label, value]) => `
-                    <div>
-                      <groupui-text weight="bold">${label}</groupui-text>
-                      <groupui-text>${value}</groupui-text>
-                    </div>
-                  `).join('')}
-                </div>
-              `, 'overview-grid-card')}
-            </groupui-grid-col>
+      <div class="comparison-grid scenario-grid">
+        ${aftersalesScenarioCards.map((card) => groupuiCard(`
+          <groupui-tag>Secondary scenario</groupui-tag>
+          <groupui-headline heading="h3">${card.title}</groupui-headline>
+          <groupui-text>${card.summary}</groupui-text>
+          <groupui-text weight="bold">${card.cta}</groupui-text>
+        `, 'overview-grid-card')).join('')}
+      </div>
+
+      <div class="comparison-grid">
+        ${targetPictures.map((picture) => groupuiCard(`
+          <groupui-tag>${picture.title}</groupui-tag>
+          <groupui-headline heading="h3">${picture.id}</groupui-headline>
+          <p><strong>Business effect:</strong> ${picture.fact}</p>
+          <p><strong>Architectural decision:</strong> ${picture.decision}</p>
+          <groupui-button variant="secondary" data-nav="${picture.id}">View pattern</groupui-button>
+        `)).join('')}
+      </div>
+
+      ${renderGroupUiRuntimeCard()}
+      ${contextPanel(createAftersalesContext({ sourceStep: 'overview', integrationMode: integrationModes.dashboardLauncher }))}
+    </section>
+  `;
+}
+
+function renderCompactDefinitionList(rows) {
+  return `
+    <dl class="compact-list">
+      ${rows.map(([label, value]) => `
+        <div>
+          <dt>${escapeHtml(label)}</dt>
+          <dd>${escapeHtml(value)}</dd>
+        </div>
+      `).join('')}
+    </dl>
+  `;
+}
+
+function renderWorkflowStatusList(items) {
+  return `
+    <div class="workflow-status-list">
+      ${items.map((item) => `
+        <div class="workflow-status-item ${item.done ? 'done' : ''}">
+          <div class="workflow-status-item-header">
+            <strong>${item.step}. ${escapeHtml(item.label)}</strong>
+            ${item.done ? '' : '<em>Offen</em>'}
+          </div>
+          ${item.done ? `<p class="workflow-status-item-value">${escapeHtml(item.value)}</p>` : ''}
+          <span>${escapeHtml(item.runtime)}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderContextAccordion(context = state.activeContext) {
+  return `
+    <div class="workflow-context-accordion">
+      <groupui-accordion first="true">
+        <span slot="headline">
+          <groupui-headline heading="h6">Serialized payload</groupui-headline>
+        </span>
+        <div class="workflow-context-accordion-body">
+          <groupui-text>
+            Host und Targets greifen auf denselben serialisierbaren Vertrag zu. Neue Schritte reichern den Kontext explizit an,
+            statt stillen Zustand zu teilen.
+          </groupui-text>
+          <div class="groupui-info-list">
+            ${contextSummaryRows(context).map(([label, value]) => `
+              <div>
+                <groupui-text weight="bold">${label}</groupui-text>
+                <groupui-text>${escapeHtml(value || 'n/a')}</groupui-text>
+              </div>
+            `).join('')}
+          </div>
+          <pre class="context-snippet">${escapeHtml(JSON.stringify(context, null, 2))}</pre>
+        </div>
+      </groupui-accordion>
+    </div>
+  `;
+}
+
+function renderAftersalesJourney() {
+  const context = createAftersalesContext({
+    sourceStep: 'aftersales-journey-view',
+    integrationMode: integrationModes.navigation
+  });
+  const appointment = state.aftersales.selectedAppointment;
+  const selectedPackage = state.aftersales.selectedPackage;
+  const serviceExtras = state.aftersales.serviceExtras;
+  const totalPrice = (selectedPackage?.estimatedPrice || 0) + (serviceExtras?.totalPrice || 0);
+  const workflowStatus = [
+    {
+      step: 1,
+      label: 'Service-Kontext',
+      runtime: 'React Shell',
+      done: true,
+      value: `${state.aftersales.serviceConcern} · ${state.aftersales.mileageKm} km`
+    },
+    {
+      step: 2,
+      label: 'Werkstattslot',
+      runtime: 'Angular',
+      done: Boolean(appointment),
+      value: appointment ? `${appointment.date} · ${appointment.timeLabel || appointment.title}` : 'Offen'
+    },
+    {
+      step: 3,
+      label: 'Servicepaket',
+      runtime: 'Svelte',
+      done: Boolean(selectedPackage),
+      value: selectedPackage ? `${selectedPackage.label} · ${selectedPackage.estimatedPrice} EUR` : 'Offen'
+    },
+    {
+      step: 4,
+      label: 'Extras und Mobilität',
+      runtime: 'Web Components',
+      done: Boolean(serviceExtras),
+      value: serviceExtras
+        ? `${(serviceExtras.selectedExtras || []).length || 0} Extras · ${serviceExtras.totalPrice || 0} EUR`
+        : 'Offen'
+    }
+  ];
+  const isInitialAftersalesStep = !appointment && !selectedPackage && !serviceExtras;
+
+  let focusTag = 'Step 1 · React Shell';
+  let focusTitle = 'Service-Kontext prüfen';
+  let focusDescription = '';
+  let focusBody = `
+    <groupui-grid class="aftersales-shell-form" gutter="16px" margin-type="custom" margin="0">
+      <groupui-grid-row>
+        <groupui-grid-col xs="12" m="6">
+          <groupui-input data-aftersales-field="serviceConcern" value="${escapeHtml(state.aftersales.serviceConcern)}">
+            <span slot="label">Service concern / Anliegen</span>
+          </groupui-input>
+        </groupui-grid-col>
+        <groupui-grid-col xs="12" m="6">
+          <groupui-input data-aftersales-field="mileageKm" value="${escapeHtml(state.aftersales.mileageKm)}">
+            <span slot="label">Mileage / Kilometerstand</span>
+          </groupui-input>
+        </groupui-grid-col>
+        <groupui-grid-col xs="12" m="6">
+          <groupui-input data-aftersales-field="workshopLocation" value="${escapeHtml(state.aftersales.workshopLocation)}">
+            <span slot="label">Workshop / Werkstatt</span>
+          </groupui-input>
+        </groupui-grid-col>
+        <groupui-grid-col xs="12" m="6">
+          <groupui-select data-aftersales-field="language" value="${escapeHtml(state.activeContext.language)}">
+            <span slot="label">Language / Sprache</span>
+            <groupui-select-option value="de-DE">Deutsch</groupui-select-option>
+            <groupui-select-option value="en-GB">English</groupui-select-option>
+          </groupui-select>
+        </groupui-grid-col>
+      </groupui-grid-row>
+    </groupui-grid>
+    <div class="workflow-next-step-inline">
+      <div class="action-row right">
+        <groupui-button variant="secondary" type="button" data-action="reset-aftersales">Journey zurücksetzen</groupui-button>
+        <groupui-button type="button" data-action="open-aftersales-calendar">Werkstattslot auswählen</groupui-button>
+      </div>
+    </div>
+  `;
+
+  if (appointment && !selectedPackage) {
+    focusTag = 'Step 2 abgeschlossen · Angular';
+    focusTitle = 'Werkstattslot übernommen';
+    focusDescription = 'Die Shell hat Datum, Slot und Werkstatt aus Angular übernommen und zeigt jetzt nur noch die bisherige Auswahl plus den nächsten Schritt.';
+    focusBody = `
+      <div class="workflow-selection-block">
+        <groupui-tag>Bereits gewählt</groupui-tag>
+        ${renderCompactDefinitionList([
+          ['Werkstattslot', appointment.title],
+          ['Datum', appointment.date],
+          ['Werkstatt', appointment.location || state.aftersales.workshopLocation],
+          ['Dauer', `${appointment.durationMinutes || 0} min`]
+        ])}
+      </div>
+      <div class="workflow-teaser">
+        <div>
+          <groupui-tag>Next step · Svelte</groupui-tag>
+          <groupui-headline heading="h3">Servicepaket auswählen</groupui-headline>
+          <groupui-text>Der nächste Dialog zeigt eine reduzierte Empfehlungsauswahl für passende Servicepakete.</groupui-text>
+        </div>
+        <div class="workflow-preview-list">
+          ${servicePackages.slice(0, 3).map((item) => `
+            <div>
+              <strong>${escapeHtml(item.label)}</strong>
+              <span>${escapeHtml(item.summary)}</span>
+            </div>
           `).join('')}
-        </groupui-grid-row>
-      </groupui-grid>
+        </div>
+        <div class="action-row">
+          <groupui-button type="button" data-action="open-aftersales-packages">Servicepaket auswählen</groupui-button>
+          <groupui-button variant="secondary" type="button" data-action="open-aftersales-calendar">Werkstattslot ändern</groupui-button>
+        </div>
+      </div>
+    `;
+  }
 
-      <groupui-grid type="fluid" margin-type="custom" margin="0" gutter="24px" class="overview-tile-grid" aria-label="Journey und Architektur">
-        <groupui-grid-row>
-          <groupui-grid-col xs="12" s="12" m="6" l="4" xl="4" xxl="4">
+  if (selectedPackage && !serviceExtras) {
+    focusTag = 'Step 3 abgeschlossen · Svelte';
+    focusTitle = 'Servicepaket übernommen';
+    focusDescription = 'Paket, Dauer und Grundpreis liegen jetzt in der Shell. Als letzter Eingabeschritt folgt eine fokussierte Extras- und Mobilitätsauswahl im Dialog.';
+    focusBody = `
+      <div class="workflow-selection-grid">
+        <div class="workflow-selection-block">
+          <groupui-tag>Bereits gewählt</groupui-tag>
+          ${renderCompactDefinitionList([
+            ['Werkstattslot', `${appointment.title} · ${appointment.date}`],
+            ['Werkstatt', appointment.location || state.aftersales.workshopLocation],
+            ['Servicepaket', selectedPackage.label],
+            ['Grundpreis', `${selectedPackage.estimatedPrice} EUR`]
+          ])}
+        </div>
+        <div class="workflow-selection-block">
+          <groupui-tag>Package summary</groupui-tag>
+          <groupui-headline heading="h3">${escapeHtml(selectedPackage.label)}</groupui-headline>
+          <groupui-text>${escapeHtml(selectedPackage.summary)}</groupui-text>
+          <groupui-text>${escapeHtml(selectedPackage.estimatedDurationMinutes)} min · ${escapeHtml(selectedPackage.estimatedPrice)} EUR</groupui-text>
+        </div>
+      </div>
+      <div class="workflow-teaser">
+        <div>
+          <groupui-tag>Next step · Web Components</groupui-tag>
+          <groupui-headline heading="h3">Extras auswählen</groupui-headline>
+          <groupui-text>Ein kompakter Dialog für Mobilität, Teile-Status und optionale Add-ons. Nach Bestätigung zeigt die Shell direkt die Serviceauftragsvorschau.</groupui-text>
+        </div>
+        <div class="workflow-preview-list">
+          <div><strong>Shuttle service</strong><span>Mobility option</span></div>
+          <div><strong>Replacement vehicle</strong><span>Optional premium support</span></div>
+          <div><strong>Wiper replacement</strong><span>Parts add-on</span></div>
+        </div>
+        <div class="action-row">
+          <groupui-button type="button" data-action="open-aftersales-extras">Extras auswählen</groupui-button>
+          <groupui-button variant="secondary" type="button" data-action="open-aftersales-packages">Servicepaket ändern</groupui-button>
+        </div>
+      </div>
+    `;
+  }
+
+  if (selectedPackage && serviceExtras) {
+    focusTag = 'Step 4 abgeschlossen · Web Components';
+    focusTitle = 'Service order preview / Serviceauftragsvorschau';
+    focusDescription = 'Alle Runtime-Beiträge sind übernommen. Die Shell zeigt nur noch die verdichtete Ergebnisansicht und hält den gesamten Verlauf nachvollziehbar.';
+    focusBody = `
+      <div class="flight-summary-header">
+        <div>
+          <groupui-headline heading="h2">Service order preview / Serviceauftragsvorschau</groupui-headline>
+          <groupui-text>React führt Angular-, Svelte- und Web-Components-Rückgaben in einer finalen Shell-Zusammenfassung zusammen.</groupui-text>
+        </div>
+        <div class="flight-summary-price">
+          <span>Estimated total</span>
+          <strong>${totalPrice} EUR</strong>
+        </div>
+      </div>
+      <div class="flight-summary-sections">
+        <section>
+          <groupui-tag>React Shell</groupui-tag>
+          <h4>Customer and vehicle</h4>
+          ${renderCompactDefinitionList([
+            ['Customer', demoCase.customer],
+            ['Vehicle', demoCase.vehicle],
+            ['Concern', state.aftersales.serviceConcern]
+          ])}
+        </section>
+        <section>
+          <groupui-tag>Angular</groupui-tag>
+          <h4>Workshop slot</h4>
+          ${renderCompactDefinitionList([
+            ['Appointment', appointment.title],
+            ['Date', appointment.date],
+            ['Location', appointment.location]
+          ])}
+        </section>
+        <section>
+          <groupui-tag>Svelte</groupui-tag>
+          <h4>Recommended package</h4>
+          ${renderCompactDefinitionList([
+            ['Package', selectedPackage.label],
+            ['Duration', `${selectedPackage.estimatedDurationMinutes} min`],
+            ['Base price', `${selectedPackage.estimatedPrice} EUR`]
+          ])}
+        </section>
+        <section class="flight-summary-costs">
+          <groupui-tag>Web Components</groupui-tag>
+          <h4>Extras and mobility</h4>
+          ${renderCompactDefinitionList([
+            ['Extras', (serviceExtras.selectedExtras || []).map((item) => item.label).join(', ') || 'Keine'],
+            ['Mobility', serviceExtras.mobilityNeed || 'none'],
+            ['Total extras', `${serviceExtras.totalPrice || 0} EUR`],
+            ['Estimated total', `${totalPrice} EUR`]
+          ])}
+        </section>
+      </div>
+      <div class="action-row">
+        <groupui-button variant="secondary" type="button" data-action="open-aftersales-extras">Extras ändern</groupui-button>
+        <groupui-button variant="secondary" type="button" data-action="reset-aftersales">Journey zurücksetzen</groupui-button>
+      </div>
+    `;
+  }
+
+  return `
+    <section class="view aftersales-view">
+      <div class="view-heading">
+        <groupui-tag>React Journey / Shell Summary</groupui-tag>
+        <groupui-headline heading="h2">Volkswagen Aftersales service appointment</groupui-headline>
+        <groupui-text>
+          Die Shell besitzt den Gesamtzustand. Jeder Schritt zeigt nur die bisherige Auswahl und teasered den nächsten
+          Dialogschritt, statt mehrere Runtime-Flächen parallel offen zu halten. Die Shell startet den Prozess,
+          hält Fahrzeug- und Servicekontext und teasered den nächsten Runtime-Schritt als klaren Dialog-Call-to-Action an.
+        </groupui-text>
+      </div>
+
+      <section class="flight-stepper aftersales-stepper" aria-label="Aftersales journey steps">
+        <groupui-stepper-horizontal>
+          ${aftersalesSteps.map((item) => `
+            <groupui-step
+              data-aftersales-step="${item.step}"
+              ${item.step === state.aftersales.currentStep ? 'active=""' : ''}
+            >${item.title}</groupui-step>
+          `).join('')}
+        </groupui-stepper-horizontal>
+        <div class="flight-step-technologies" aria-label="Frontend technologies per step">
+          ${aftersalesSteps.map((item) => `
+            <span class="${item.step === state.aftersales.currentStep ? 'is-current' : ''}">
+              ${item.app}
+            </span>
+          `).join('')}
+        </div>
+      </section>
+
+      ${isInitialAftersalesStep ? `
+        <div class="aftersales-workflow-layout aftersales-step1-layout">
+          <div class="aftersales-workflow-main aftersales-step1-main">
             ${groupuiCard(`
-              <groupui-tag>Dashboard-Kachel</groupui-tag>
-              <groupui-headline heading="h3">Case ${demoCase.id}</groupui-headline>
-              <groupui-text>${demoCase.title}</groupui-text>
-              <div class="groupui-info-list">
-                <div><groupui-text weight="bold">Vehicle</groupui-text><groupui-text>${demoCase.vehicle}</groupui-text></div>
-                <div><groupui-text weight="bold">Customer</groupui-text><groupui-text>${demoCase.customer}</groupui-text></div>
-                <div><groupui-text weight="bold">Status</groupui-text><groupui-text>${demoCase.status}</groupui-text></div>
+              <groupui-tag>${focusTag}</groupui-tag>
+              <groupui-headline heading="h2">${focusTitle}</groupui-headline>
+              ${focusDescription ? `<groupui-text>${focusDescription}</groupui-text>` : ''}
+              ${focusBody}
+            `, 'aftersales-focus-card')}
+            ${groupuiCard(renderContextAccordion(context), 'aftersales-accordion-card')}
+          </div>
+
+          <aside class="aftersales-workflow-side aftersales-step1-side">
+            ${groupuiCard(`
+              <groupui-tag>Customer data</groupui-tag>
+              <groupui-headline heading="h3">Kundendaten</groupui-headline>
+              ${renderCompactDefinitionList([
+                ['Name', demoCase.customer],
+                ['Vehicle', demoCase.vehicle],
+                ['VIN', demoCase.vin],
+                ['Workshop', state.aftersales.workshopLocation],
+                ['Language', state.activeContext.language]
+              ])}
+            `, 'aftersales-summary-card')}
+
+            ${groupuiCard(`
+              <groupui-tag>Shell summary</groupui-tag>
+              <groupui-headline heading="h3">Auftragsübersicht</groupui-headline>
+              ${renderWorkflowStatusList(workflowStatus)}
+              <div class="summary-price-panel">
+                <span>Estimated order value</span>
+                <strong>0 EUR</strong>
               </div>
-              <groupui-button data-action="launchpad">Ziel-App mit Kontext oeffnen</groupui-button>
-            `, 'overview-tile-card')}
-          </groupui-grid-col>
-          <groupui-grid-col xs="12" s="12" m="6" l="4" xl="4" xxl="4">
+            `, 'aftersales-summary-card')}
+          </aside>
+        </div>
+      ` : `
+        <div class="aftersales-workflow-layout">
+          <div class="aftersales-workflow-main">
             ${groupuiCard(`
-              <groupui-tag>Journey</groupui-tag>
-              <groupui-headline heading="h3">Wiederverwendbarer Business Flow</groupui-headline>
-              <div class="groupui-step-list">
-                ${journeySteps.map((step, index) => `
-                  <div>
-                    <groupui-tag>${index + 1}</groupui-tag>
-                    <groupui-text>${step}</groupui-text>
-                  </div>
-                `).join('')}
+              <groupui-tag>${focusTag}</groupui-tag>
+              <groupui-headline heading="h2">${focusTitle}</groupui-headline>
+              <groupui-text>${focusDescription}</groupui-text>
+              ${focusBody}
+            `, 'aftersales-focus-card')}
+            ${groupuiCard(renderContextAccordion(context), 'aftersales-accordion-card')}
+          </div>
+
+          <aside class="aftersales-workflow-side">
+            ${groupuiCard(`
+              <groupui-tag>Shell summary</groupui-tag>
+              <groupui-headline heading="h3">Bisheriger Stand</groupui-headline>
+              ${renderWorkflowStatusList(workflowStatus)}
+              <div class="summary-price-panel">
+                <span>Estimated order value</span>
+                <strong>${selectedPackage ? totalPrice : selectedPackage?.estimatedPrice || 0} EUR</strong>
               </div>
-              <groupui-button variant="secondary" data-nav="comparison">Zielbilder vergleichen</groupui-button>
-            `, 'overview-tile-card')}
-          </groupui-grid-col>
-          <groupui-grid-col xs="12" s="12" m="6" l="4" xl="4" xxl="4">
-            ${groupuiCard(`
-              <groupui-tag>Architektur</groupui-tag>
-              <groupui-headline heading="h3">Shared Context + Event Bridge</groupui-headline>
-              <groupui-text>Context Passing, Native Clicks und Custom Events werden sichtbar geloggt.</groupui-text>
-              <groupui-button variant="secondary" data-nav="debug">Debug View oeffnen</groupui-button>
-            `, 'overview-tile-card')}
-          </groupui-grid-col>
-          <groupui-grid-col xs="12" s="12" m="12" l="12" xl="12" xxl="12">
-            ${groupuiCard(`
-              <groupui-tag>Gemeinsamer Context</groupui-tag>
-              <groupui-headline heading="h3">Ein Payload, mehrere Integrationsformen</groupui-headline>
-              <groupui-text>Derselbe Payload wird fuer Launchpad, Modal, Navigation, Embedded Workspace und Integrated Experience verwendet.</groupui-text>
-              <div class="groupui-info-list">
-                ${contextSummaryRows(state.activeContext).map(([label, value]) => `
-                  <div>
-                    <groupui-text weight="bold">${label}</groupui-text>
-                    <groupui-text>${value || 'n/a'}</groupui-text>
-                  </div>
-                `).join('')}
-              </div>
-            `, 'overview-tile-card')}
-          </groupui-grid-col>
-          <groupui-grid-col xs="12" s="12" m="12" l="12" xl="12" xxl="12">
-            ${renderGroupUiRuntimeCard()}
-          </groupui-grid-col>
-        </groupui-grid-row>
-      </groupui-grid>
-      ${contextPanel()}
+              ${renderCompactDefinitionList([
+                ['Customer', demoCase.customer],
+                ['Vehicle', demoCase.vehicle],
+                ['Workshop', appointment?.location || state.aftersales.workshopLocation],
+                ['Language', state.activeContext.language]
+              ])}
+            `, 'aftersales-summary-card')}
+          </aside>
+        </div>
+      `}
     </section>
   `;
 }
@@ -657,14 +1260,14 @@ function renderComparison() {
     <section class="view">
       <div class="view-heading">
         <groupui-headline heading="h2">Vergleich der Zielbilder</groupui-headline>
-        <p>Dokumentierte Fakten sind von Demo-Entscheidungen getrennt.</p>
+        <p>Die Plattform bleibt fachlich Aftersales-first, erklärt aber weiterhin sichtbar unterschiedliche Integrationsmuster.</p>
       </div>
       <div class="comparison-grid">
         ${targetPictures.map((picture) => groupuiCard(`
           <groupui-tag>${picture.id}</groupui-tag>
           <groupui-headline heading="h3">${picture.title}</groupui-headline>
-          <p><strong>Dokumentierter Fakt:</strong> ${picture.fact}</p>
-          <p><strong>Architekturentscheidung:</strong> ${picture.decision}</p>
+          <p><strong>Documented fact:</strong> ${picture.fact}</p>
+          <p><strong>Demo decision:</strong> ${picture.decision}</p>
           <groupui-button variant="secondary" data-nav="${picture.id}">Demo anzeigen</groupui-button>
         `)).join('')}
       </div>
@@ -672,27 +1275,112 @@ function renderComparison() {
   `;
 }
 
-function createFlightBookingContext(overrides = {}) {
-  const booking = state.flightBooking;
-
-  return createContext({
-    journeyType: 'flight-booking',
-    sourceApp: 'react-shell',
-    sourceStep: 'flight-booking-step-1',
-    targetApp: 'angular-calendar-target',
-    integrationMode: 'stepper-shell',
-    origin: booking.origin,
-    destination: booking.destination,
-    tripType: booking.tripType,
-    passengers: Number(booking.passengers),
-    travelClass: booking.travelClass,
-    departureDate: booking.departureDate || null,
-    selectedDateTitle: booking.selectedDateTitle || null,
-    flightBooking: {
-      ...booking
+function renderTechnologyOverview() {
+  const techCards = [
+    {
+      tag: 'React Shell',
+      title: 'Host shell and continuity layer',
+      copy: 'React besitzt Navigation, Zusammenfassung, Journey-State und die Merge-Logik für alle Target-Rückgaben.'
     },
-    ...overrides
-  });
+    {
+      tag: 'Angular',
+      title: 'Workshop capacity step',
+      copy: 'Angular zeigt den kapazitätsbezogenen Auswahl-Schritt als eigenständige App und gibt den Slot über Browser-native Kanäle zurück.'
+    },
+    {
+      tag: 'Svelte',
+      title: 'Recommendation step',
+      copy: 'Svelte liefert einen kompakten, reaktiven Paket-Auswahlschritt für Aftersales-Services.'
+    },
+    {
+      tag: 'Web Components',
+      title: 'Framework-neutral extras',
+      copy: 'Das Extras-Target demonstriert frameworkunabhängige, browserfreundliche UI-Schnittstellen.'
+    },
+    {
+      tag: 'GroupUI',
+      title: 'Mandatory visual language',
+      copy: 'GroupUI-Komponenten, Tokens und Layoutregeln bleiben das gemeinsame Designsystem über Host und Targets hinweg.'
+    },
+    {
+      tag: 'Shared packages',
+      title: 'Contracts, demo data and integration helpers',
+      copy: 'Context-Modell, Navigation und Handover-Helfer bleiben zentral unter packages/ statt in Apps dupliziert.'
+    }
+  ];
+
+  return `
+    <section class="view">
+      <div class="view-heading">
+        <groupui-tag>Technical stakeholder view</groupui-tag>
+        <groupui-headline heading="h2">Technology Overview</groupui-headline>
+        <groupui-text>Diese Seite erklärt, wie die Plattform aus realen Runtime-Teilnehmern zusammengesetzt ist, ohne die fachliche Journey in Debug-Details aufzulösen.</groupui-text>
+      </div>
+      <div class="comparison-grid tech-card-grid">
+        ${techCards.map((card) => groupuiCard(`
+          <groupui-tag>${card.tag}</groupui-tag>
+          <groupui-headline heading="h3">${card.title}</groupui-headline>
+          <groupui-text>${card.copy}</groupui-text>
+        `, 'overview-grid-card')).join('')}
+      </div>
+      ${renderGroupUiRuntimeCard()}
+    </section>
+  `;
+}
+
+function renderImplementation() {
+  const implementationCards = [
+    {
+      tag: 'Host ownership',
+      title: 'Shell stays canonical',
+      copy: 'Die Shell besitzt Journey-State, Navigation, Zusammenfassungen und die finale Serviceauftragsvorschau.'
+    },
+    {
+      tag: 'Context model',
+      title: 'Serializable and explicit',
+      copy: 'Alle Aftersales-Felder bleiben URL-serialisierbar. Targets schlagen Änderungen vor, die Shell führt sie zusammen.'
+    },
+    {
+      tag: 'Handover channels',
+      title: 'URL, BroadcastChannel, postMessage',
+      copy: 'Isolierte, eingebettete, Modal- und New-Tab-Pfade bleiben sichtbar und browsernah.'
+    },
+    {
+      tag: 'Verification',
+      title: 'Build and QA hardening',
+      copy: 'Der Produktions-Build bleibt die Referenz. Unit-/Syntax-Checks und E2E decken Landing, Handover und Referenzfluss ab.'
+    }
+  ];
+
+  return `
+    <section class="view">
+      <div class="view-heading">
+        <groupui-tag>Implementation briefing</groupui-tag>
+        <groupui-headline heading="h2">Implementation</groupui-headline>
+        <groupui-text>Diese Zusammenfassung richtet sich an Entwickler und Architekten, die Ownership, Datenfluss und Teststrategie der Plattform schnell verstehen müssen.</groupui-text>
+      </div>
+      <div class="comparison-grid implementation-grid">
+        ${implementationCards.map((card) => groupuiCard(`
+          <groupui-tag>${card.tag}</groupui-tag>
+          <groupui-headline heading="h3">${card.title}</groupui-headline>
+          <groupui-text>${card.copy}</groupui-text>
+        `, 'overview-grid-card')).join('')}
+      </div>
+      <div class="comparison-grid implementation-grid">
+        ${Object.entries({
+          [integrationModes.linkedLaunchpad]: describeIntegrationMode('linkedLaunchpad'),
+          [integrationModes.embeddedWorkspace]: describeIntegrationMode('embeddedWorkspace'),
+          [integrationModes.integratedExperience]: describeIntegrationMode('integratedExperience'),
+          [integrationModes.modal]: describeIntegrationMode('modal')
+        }).map(([mode, detail]) => groupuiCard(`
+          <groupui-tag>${mode}</groupui-tag>
+          <groupui-headline heading="h3">${detail.label}</groupui-headline>
+          <groupui-text>${detail.ownershipHint}</groupui-text>
+        `)).join('')}
+      </div>
+      ${contextPanel(createAftersalesContext({ sourceStep: 'implementation-briefing', integrationMode: integrationModes.navigation }))}
+    </section>
+  `;
 }
 
 function renderFlightBooking() {
@@ -720,14 +1408,17 @@ function renderFlightBooking() {
     ? 'Die React Shell hat den Flugoptions-Schritt selbst ausgeführt und denselben Kontext erweitert.'
     : flightOptionFromEmbeddedSvelte
       ? 'Die Svelte-App lief als iframe direkt in der React Shell und hat die Flugauswahl zurückgegeben.'
-    : 'Die Svelte Remote hat die Flugauswahl an die React Shell zurückgegeben.';
+      : 'Die Svelte Remote hat die Flugauswahl an die React Shell zurückgegeben.';
 
   return `
     <section class="view flight-booking-view">
       <div class="view-heading">
-        <groupui-tag>React Shell Stepper</groupui-tag>
-        <groupui-headline heading="h2">Flugbuchung Hannover → Barcelona</groupui-headline>
-        <groupui-text>Schritt 1 startet in der React Shell. Danach wird der Kontext an den Angular Kalender übergeben.</groupui-text>
+        <groupui-tag>Reference flow / Referenzfluss</groupui-tag>
+        <groupui-headline heading="h2">Flight booking Hannover → Barcelona</groupui-headline>
+        <groupui-text>
+          Der bestehende Flugfluss bleibt als sekundärer Referenzpfad erhalten. Er erklärt Ownership und Handover weiter sichtbar,
+          steht aber nicht mehr im Zentrum der Produktstory.
+        </groupui-text>
       </div>
 
       <section class="flight-stepper" aria-label="Flight booking steps">
@@ -741,20 +1432,18 @@ function renderFlightBooking() {
           `).join('')}
         </groupui-stepper-horizontal>
         <div class="flight-step-technologies" aria-label="Frontend technologies per step">
-          ${flightBookingSteps.map((item) => `
-            <span><strong>${item.step}</strong>${item.app}</span>
-          `).join('')}
+          ${flightBookingSteps.map((item) => `<span><strong>${item.step}</strong>${item.app}</span>`).join('')}
         </div>
       </section>
 
       ${state.flightBooking.departureDate ? groupuiCard(`
         <groupui-tag>Von Angular zurückgegeben</groupui-tag>
         <groupui-headline heading="h3">Reisedatum übernommen</groupui-headline>
-        <groupui-text>Der Angular Kalender hat den Termin an die React Shell zurückgegeben.</groupui-text>
+        <groupui-text>Der Angular-Kalender hat den Termin an die React Shell zurückgegeben.</groupui-text>
         <dl class="compact-list">
-          <div><dt>Datum</dt><dd>${state.flightBooking.departureDate}</dd></div>
-          <div><dt>Auswahl</dt><dd>${state.flightBooking.selectedDateTitle}</dd></div>
-          <div><dt>Quelle</dt><dd>${state.receivedTransfer?.from || 'angular-calendar-target'}</dd></div>
+          <div><dt>Datum</dt><dd>${escapeHtml(state.flightBooking.departureDate)}</dd></div>
+          <div><dt>Auswahl</dt><dd>${escapeHtml(state.flightBooking.selectedDateTitle)}</dd></div>
+          <div><dt>Quelle</dt><dd>${escapeHtml(state.receivedTransfer?.from || 'angular-calendar-target')}</dd></div>
         </dl>
         <groupui-button variant="secondary" type="button" data-action="open-flight-calendar">Termin ändern</groupui-button>
       `, 'flight-return-card') : ''}
@@ -771,12 +1460,8 @@ function renderFlightBooking() {
       ${state.flightBooking.departureDate && (!state.flightBooking.flightOption || state.flightBooking.currentStep === 3) ? groupuiCard(`
         <groupui-tag>Integration Pattern B · Embedded Svelte</groupui-tag>
         <groupui-headline heading="h3">Flugoptionen direkt in der React Shell bedienen</groupui-headline>
-        <groupui-text>Die Svelte-App läuft als iframe innerhalb der Shell. Anzeige, GroupUI Radio-Auswahl und Übernehmen-Button kommen aus Svelte.</groupui-text>
-        <iframe
-          class="embedded-svelte-frame"
-          title="Svelte Flight Options Embedded"
-          src="${embeddedFlightOptionsUrl}"
-        ></iframe>
+        <groupui-text>Die Svelte-App läuft als iframe innerhalb der Shell. Anzeige, Auswahl und Übernehmen-Button kommen aus Svelte.</groupui-text>
+        <iframe class="embedded-svelte-frame" title="Svelte Flight Options Embedded" src="${embeddedFlightOptionsUrl}"></iframe>
       `, 'embedded-flight-options-card') : ''}
 
       ${state.flightBooking.departureDate && (!state.flightBooking.flightOption || state.flightBooking.currentStep === 3) ? groupuiCard(`
@@ -794,9 +1479,7 @@ function renderFlightBooking() {
                 <div><dt>Dauer</dt><dd>${option.duration}</dd></div>
                 <div><dt>Preis</dt><dd>${option.price} EUR</dd></div>
               </dl>
-              <groupui-button type="button" data-action="select-shell-flight-option" data-option-id="${option.id}">
-                Direkt wählen
-              </groupui-button>
+              <groupui-button type="button" data-action="select-shell-flight-option" data-option-id="${option.id}">Direkt wählen</groupui-button>
             </groupui-card>
           `).join('')}
         </div>
@@ -807,10 +1490,10 @@ function renderFlightBooking() {
         <groupui-headline heading="h3">Flugoption übernommen</groupui-headline>
         <groupui-text>${flightOptionSourceText}</groupui-text>
         <dl class="compact-list">
-          <div><dt>Option</dt><dd>${state.flightBooking.flightOption.label}</dd></div>
-          <div><dt>Airline</dt><dd>${state.flightBooking.flightOption.carrier}</dd></div>
-          <div><dt>Preis</dt><dd>${state.flightBooking.flightOption.price} EUR</dd></div>
-          <div><dt>Quelle</dt><dd>${state.receivedTransfer?.from || 'svelte-flight-options-target'}</dd></div>
+          <div><dt>Option</dt><dd>${escapeHtml(state.flightBooking.flightOption.label)}</dd></div>
+          <div><dt>Airline</dt><dd>${escapeHtml(state.flightBooking.flightOption.carrier)}</dd></div>
+          <div><dt>Preis</dt><dd>${escapeHtml(state.flightBooking.flightOption.price)} EUR</dd></div>
+          <div><dt>Quelle</dt><dd>${escapeHtml(state.receivedTransfer?.from || 'svelte-flight-options-target')}</dd></div>
         </dl>
         <groupui-button variant="secondary" type="button" data-action="open-flight-options">Flugoption ändern</groupui-button>
       `, 'flight-option-return-card') : ''}
@@ -819,11 +1502,7 @@ function renderFlightBooking() {
         <groupui-tag>Schritt 4 · Native Web Component</groupui-tag>
         <groupui-headline heading="h3">Reise-Extras auswählen</groupui-headline>
         <groupui-text>Die Extras werden in einer eigenständigen Web-Components-Ziel-App bedient. Die React Shell bettet sie als iframe ein.</groupui-text>
-        <iframe
-          class="embedded-stencil-frame"
-          title="Web Component Flight Extras Embedded"
-          src="${embeddedFlightExtrasUrl}"
-        ></iframe>
+        <iframe class="embedded-stencil-frame" title="Web Component Flight Extras Embedded" src="${embeddedFlightExtrasUrl}"></iframe>
       `, 'embedded-flight-extras-card') : ''}
 
       ${state.flightBooking.flightExtras && state.flightBooking.currentStep !== 4 ? groupuiCard(`
@@ -831,12 +1510,12 @@ function renderFlightBooking() {
         <groupui-headline heading="h3">Extras übernommen</groupui-headline>
         <groupui-text>Die Web-Component-App hat die Zusatzleistungen an die React Shell zurückgegeben.</groupui-text>
         <dl class="compact-list">
-          <div><dt>Sitzplatz</dt><dd>${state.flightBooking.flightExtras.seat}</dd></div>
-          <div><dt>Gepäck</dt><dd>${state.flightBooking.flightExtras.baggage}</dd></div>
+          <div><dt>Sitzplatz</dt><dd>${escapeHtml(state.flightBooking.flightExtras.seat)}</dd></div>
+          <div><dt>Gepäck</dt><dd>${escapeHtml(state.flightBooking.flightExtras.baggage)}</dd></div>
           <div><dt>Priority</dt><dd>${state.flightBooking.flightExtras.priorityBoarding ? 'Ja' : 'Nein'}</dd></div>
           <div><dt>CO2-Ausgleich</dt><dd>${state.flightBooking.flightExtras.carbonOffset ? 'Ja' : 'Nein'}</dd></div>
-          <div><dt>Preis Extras</dt><dd>${state.flightBooking.flightExtras.totalPrice} EUR</dd></div>
-          <div><dt>Quelle</dt><dd>${state.receivedTransfer?.from || 'stencil-flight-extras-target'}</dd></div>
+          <div><dt>Preis Extras</dt><dd>${escapeHtml(state.flightBooking.flightExtras.totalPrice)} EUR</dd></div>
+          <div><dt>Quelle</dt><dd>${escapeHtml(state.receivedTransfer?.from || 'stencil-flight-extras-target')}</dd></div>
         </dl>
         <groupui-button variant="secondary" type="button" data-action="open-flight-extras">Extras ändern</groupui-button>
       `, 'flight-extras-return-card') : ''}
@@ -855,15 +1534,9 @@ function renderFlightBooking() {
         </div>
 
         <div class="flight-summary-route">
-          <div>
-            <span>Von</span>
-            <strong>${state.flightBooking.origin}</strong>
-          </div>
+          <div><span>Von</span><strong>${escapeHtml(state.flightBooking.origin)}</strong></div>
           <div class="flight-summary-route-line" aria-hidden="true"></div>
-          <div>
-            <span>Nach</span>
-            <strong>${state.flightBooking.destination}</strong>
-          </div>
+          <div><span>Nach</span><strong>${escapeHtml(state.flightBooking.destination)}</strong></div>
         </div>
 
         <div class="flight-summary-sections">
@@ -871,48 +1544,39 @@ function renderFlightBooking() {
             <groupui-tag>Angular</groupui-tag>
             <h4>Reisedatum</h4>
             <dl class="compact-list">
-              <div><dt>Datum</dt><dd>${state.flightBooking.departureDate}</dd></div>
-              <div><dt>Auswahl</dt><dd>${state.flightBooking.selectedDateTitle}</dd></div>
+              <div><dt>Datum</dt><dd>${escapeHtml(state.flightBooking.departureDate)}</dd></div>
+              <div><dt>Auswahl</dt><dd>${escapeHtml(state.flightBooking.selectedDateTitle)}</dd></div>
             </dl>
           </section>
-
           <section>
             <groupui-tag>Svelte</groupui-tag>
             <h4>Flugoption</h4>
             <dl class="compact-list">
-              <div><dt>Option</dt><dd>${state.flightBooking.flightOption.label}</dd></div>
-              <div><dt>Airline</dt><dd>${state.flightBooking.flightOption.carrier}</dd></div>
-              <div><dt>Zeit</dt><dd>${state.flightBooking.flightOption.departure}-${state.flightBooking.flightOption.arrival}</dd></div>
-              <div><dt>Preis</dt><dd>${state.flightBooking.flightOption.price} EUR</dd></div>
+              <div><dt>Option</dt><dd>${escapeHtml(state.flightBooking.flightOption.label)}</dd></div>
+              <div><dt>Airline</dt><dd>${escapeHtml(state.flightBooking.flightOption.carrier)}</dd></div>
+              <div><dt>Zeit</dt><dd>${escapeHtml(state.flightBooking.flightOption.departure)}-${escapeHtml(state.flightBooking.flightOption.arrival)}</dd></div>
+              <div><dt>Preis</dt><dd>${escapeHtml(state.flightBooking.flightOption.price)} EUR</dd></div>
             </dl>
           </section>
-
           <section>
             <groupui-tag>Web Components</groupui-tag>
             <h4>Reise-Extras</h4>
             <dl class="compact-list">
-              <div><dt>Sitzplatz</dt><dd>${state.flightBooking.flightExtras.seat}</dd></div>
-              <div><dt>Gepäck</dt><dd>${state.flightBooking.flightExtras.baggage}</dd></div>
+              <div><dt>Sitzplatz</dt><dd>${escapeHtml(state.flightBooking.flightExtras.seat)}</dd></div>
+              <div><dt>Gepäck</dt><dd>${escapeHtml(state.flightBooking.flightExtras.baggage)}</dd></div>
               <div><dt>Priority</dt><dd>${state.flightBooking.flightExtras.priorityBoarding ? 'Ja' : 'Nein'}</dd></div>
               <div><dt>CO2</dt><dd>${state.flightBooking.flightExtras.carbonOffset ? 'Ja' : 'Nein'}</dd></div>
             </dl>
           </section>
-
           <section class="flight-summary-costs">
             <groupui-tag>React Shell</groupui-tag>
             <h4>Kostenübersicht</h4>
             <dl class="compact-list">
-              <div><dt>Flug</dt><dd>${state.flightBooking.flightOption.price} EUR</dd></div>
-              <div><dt>Extras</dt><dd>${state.flightBooking.flightExtras.totalPrice} EUR</dd></div>
+              <div><dt>Flug</dt><dd>${escapeHtml(state.flightBooking.flightOption.price)} EUR</dd></div>
+              <div><dt>Extras</dt><dd>${escapeHtml(state.flightBooking.flightExtras.totalPrice)} EUR</dd></div>
               <div class="flight-summary-total"><dt>Gesamt</dt><dd>${state.flightBooking.flightOption.price + state.flightBooking.flightExtras.totalPrice} EUR</dd></div>
             </dl>
           </section>
-        </div>
-
-        <div class="flight-summary-actions">
-          <groupui-button variant="secondary" type="button" data-flight-step="2">Datum ändern</groupui-button>
-          <groupui-button variant="secondary" type="button" data-flight-step="3">Flug ändern</groupui-button>
-          <groupui-button variant="secondary" type="button" data-flight-step="4">Extras ändern</groupui-button>
         </div>
       `, 'flight-summary-card') : ''}
 
@@ -921,16 +1585,9 @@ function renderFlightBooking() {
           <groupui-tag>Schritt 1 · React Shell</groupui-tag>
           <groupui-headline heading="h3">Reisedaten festlegen</groupui-headline>
           <groupui-text>Die Shell erzeugt den initialen Journey-Kontext für die späteren Remote-Schritte.</groupui-text>
-
           <form class="flight-form">
-            <label>
-              <span>Von</span>
-              <input data-flight-field="origin" value="${state.flightBooking.origin}" />
-            </label>
-            <label>
-              <span>Nach</span>
-              <input data-flight-field="destination" value="${state.flightBooking.destination}" />
-            </label>
+            <label><span>Von</span><input data-flight-field="origin" value="${escapeHtml(state.flightBooking.origin)}" /></label>
+            <label><span>Nach</span><input data-flight-field="destination" value="${escapeHtml(state.flightBooking.destination)}" /></label>
             <label>
               <span>Reiseart</span>
               <select data-flight-field="tripType">
@@ -938,10 +1595,7 @@ function renderFlightBooking() {
                 <option value="return" ${state.flightBooking.tripType === 'return' ? 'selected' : ''}>Return</option>
               </select>
             </label>
-            <label>
-              <span>Reisende</span>
-              <input type="number" min="1" max="9" data-flight-field="passengers" value="${state.flightBooking.passengers}" />
-            </label>
+            <label><span>Reisende</span><input type="number" min="1" max="9" data-flight-field="passengers" value="${escapeHtml(state.flightBooking.passengers)}" /></label>
             <label>
               <span>Klasse</span>
               <select data-flight-field="travelClass">
@@ -951,7 +1605,6 @@ function renderFlightBooking() {
               </select>
             </label>
           </form>
-
           <div class="action-row">
             <groupui-button type="button" data-action="open-flight-calendar">Angular Kalender im Modal öffnen</groupui-button>
             <groupui-button variant="secondary" type="button" data-nav="debug">Event Log ansehen</groupui-button>
@@ -959,10 +1612,10 @@ function renderFlightBooking() {
         `, 'flight-form-card')}
 
         ${groupuiCard(`
-          <groupui-tag>Live Payload</groupui-tag>
+          <groupui-tag>Live payload</groupui-tag>
           <groupui-headline heading="h3">Kontext aus Schritt 1</groupui-headline>
           <groupui-text>Dieser Payload wird im nächsten Schritt an die Angular Calendar App übergeben.</groupui-text>
-          <pre class="context-snippet">${JSON.stringify(context, null, 2)}</pre>
+          <pre class="context-snippet">${escapeHtml(JSON.stringify(context, null, 2))}</pre>
         `)}
       </div>
     </section>
@@ -980,16 +1633,11 @@ function renderIsolatedFlightBookingPage(pageId) {
         <groupui-headline heading="h2">${page.title}</groupui-headline>
         <groupui-text>${page.description}</groupui-text>
       </div>
-
       ${groupuiCard(`
         <groupui-tag>Singuläre Ansicht</groupui-tag>
         <groupui-headline heading="h3">${page.technology}</groupui-headline>
-        <groupui-text>Diese Seite wird ohne <code>?context=...</code> geladen. Sie ist nur als isolierte Technologieansicht gedacht.</groupui-text>
-        <iframe
-          class="isolated-app-frame"
-          title="${page.title}"
-          src="${page.target}"
-        ></iframe>
+        <groupui-text>Diese Seite wird ohne <code>?context=...</code> geladen und bleibt als eigenständige Runtime-Ansicht verfügbar.</groupui-text>
+        <iframe class="isolated-app-frame" title="${page.title}" src="${page.target}"></iframe>
       `, 'isolated-app-card')}
     </section>
   `;
@@ -1012,14 +1660,13 @@ function linkedTransferPayload(context = linkedLaunchContext()) {
 function renderLinkedLaunchpad() {
   const context = linkedLaunchContext();
   const transferPayload = linkedTransferPayload(context);
-  const proofSnippet = `// app.js\nfunction linkedLaunchContext() {\n  return createContext({\n    ...state.activeContext,\n    sourceApp: 'react-shell',\n    targetApp: 'case-follow-up-app',\n    sourceStep: 'dashboard-follow-up-action',\n    integrationMode: integrationModes.linkedLaunchpad\n  });\n}`;
 
   return `
     <section class="view linked-page">
       <section class="linked-hero">
         <div>
           <groupui-tag>Linked Integration</groupui-tag>
-          <groupui-headline heading="h1">Linked Integration</groupui-headline>
+          <groupui-headline heading="h1">Linked integration / sichtbare Systemgrenze</groupui-headline>
           <p class="hero-lead">Loose coupling through explicit system handover.</p>
         </div>
         <div class="linked-system-strip" aria-label="System handover">
@@ -1030,75 +1677,37 @@ function renderLinkedLaunchpad() {
       </section>
 
       <section class="linked-journey" aria-label="Customer journey">
-        <div class="journey-card journey-card-active">
-          <span>Step 1</span>
-          <strong>Dashboard with a case</strong>
-          <p>The host shows the case and offers a follow-up action.</p>
-        </div>
-        <div class="journey-card">
-          <span>Step 2</span>
-          <strong>Explicit launch</strong>
-          <p>The button hands over serialized context to another system.</p>
-        </div>
-        <div class="journey-card">
-          <span>Step 3</span>
-          <strong>Target system opened</strong>
-          <p>The Angular app receives the context; the target is not embedded.</p>
-        </div>
+        <div class="journey-card journey-card-active"><span>Step 1</span><strong>Host prepares context</strong><p>The host shows the case and prepares serialized context.</p></div>
+        <div class="journey-card"><span>Step 2</span><strong>Explicit launch</strong><p>The button hands over serialized context to another system.</p></div>
+        <div class="journey-card"><span>Step 3</span><strong>Target system opened</strong><p>The Angular app receives the context; the target is not embedded.</p></div>
       </section>
 
       <div class="linked-dashboard">
         <div class="system-card system-card-host">
           <groupui-tag>Host</groupui-tag>
-          <div class="system-branding">
-            <div class="logo">
-              <img src="./public/React.png" alt="React Logo" />
-            </div>
-            <div>
-              <groupui-headline heading="h3">React Shell Dashboard</groupui-headline>
-              <groupui-text weight="bold">React Shell</groupui-text>
-            </div>
-          </div>
+          <groupui-headline heading="h3">React Shell Dashboard</groupui-headline>
           <groupui-text>Case ${demoCase.id} is visible in the host application.</groupui-text>
           <dl class="compact-list">
-            <div><dt>Customer</dt><dd>${demoCase.customer}</dd></div>
-            <div><dt>Vehicle</dt><dd>${demoCase.vehicle}</dd></div>
-            <div><dt>Status</dt><dd>${demoCase.status}</dd></div>
+            <div><dt>Customer</dt><dd>${escapeHtml(demoCase.customer)}</dd></div>
+            <div><dt>Vehicle</dt><dd>${escapeHtml(demoCase.vehicle)}</dd></div>
+            <div><dt>Status</dt><dd>${escapeHtml(demoCase.status)}</dd></div>
           </dl>
           ${state.followUpNote ? `
             <div class="returned-note">
               <groupui-text weight="bold">React Shell received:</groupui-text>
-              <p>${state.followUpNote}</p>
-              ${state.receivedTransfer?.appointment ? `
-                <pre>${JSON.stringify(state.receivedTransfer, null, 2)}</pre>
-              ` : ''}
+              <p>${escapeHtml(state.followUpNote)}</p>
             </div>
-          ` : `
-            <groupui-text>Die React Shell wartet auf eine Follow-up Note aus der Angular Target App.</groupui-text>
-          `}
+          ` : '<groupui-text>Die React Shell wartet auf eine Follow-up Note aus der Angular Target App.</groupui-text>'}
           <groupui-button type="button" data-action="linked-launch">Edit follow-up step</groupui-button>
         </div>
 
-        <div class="system-boundary" aria-hidden="true">
-          <span>System boundary</span>
-        </div>
+        <div class="system-boundary" aria-hidden="true"><span>System boundary</span></div>
 
         <div class="system-card system-card-target">
           <groupui-tag>Target</groupui-tag>
-          <div class="system-branding">
-            <div class="logo">
-              <img src="./public/Angular.png" alt="Angular Logo" />
-            </div>
-            <div>
-              <groupui-headline heading="h3">Angular App</groupui-headline>
-              <groupui-text weight="bold">Angular Target App</groupui-text>
-            </div>
-          </div>
+          <groupui-headline heading="h3">Angular App</groupui-headline>
           <groupui-text>The target is launched explicitly. It is not embedded in the React shell.</groupui-text>
-          <div class="target-placeholder">
-            <strong>Case Follow-Up App</strong>
-            <span>Opened only after context handover</span>
-          </div>
+          <div class="target-placeholder"><strong>Case Follow-Up App</strong><span>Opened only after context handover</span></div>
         </div>
       </div>
 
@@ -1107,15 +1716,24 @@ function renderLinkedLaunchpad() {
           <groupui-text weight="bold">Transfer payload</groupui-text>
           <p>Der vollständige App-Kontext wird innerhalb der React Shell an die Linked Integration übergeben.</p>
         </div>
-        <pre>${JSON.stringify(transferPayload, null, 2)}</pre>
-      </section>
-
-      <section class="proof-panel" aria-label="Proof of React and Angular apps">
-        <groupui-headline heading="h4">Proof: React & Angular</groupui-headline>
-        <groupui-text>Dieser Kontext stammt direkt aus dem React Shell-Code und zeigt die klare Host-/Target-Beziehung.</groupui-text>
-        <pre class="code-proof">${proofSnippet}</pre>
+        <pre>${escapeHtml(JSON.stringify(transferPayload, null, 2))}</pre>
       </section>
     </section>
+  `;
+}
+
+function renderCaseRemote(context) {
+  return `
+    <div class="remote remote-angular">
+      <groupui-text weight="bold">Remote A: Angular service slice</groupui-text>
+      <p>Die Shell hält den Kontext sichtbar. Angular übernimmt hier einen klar abgrenzbaren Funktionsschritt.</p>
+      <dl class="compact-list">
+        <div><dt>Case</dt><dd>${escapeHtml(demoCase.id)}</dd></div>
+        <div><dt>Concern</dt><dd>${escapeHtml(context.serviceConcern || demoCase.serviceConcern)}</dd></div>
+        <div><dt>Integration</dt><dd>${escapeHtml(context.integrationMode)}</dd></div>
+      </dl>
+      <groupui-button data-action="modal">Folgeschritt im Modal bearbeiten</groupui-button>
+    </div>
   `;
 }
 
@@ -1123,14 +1741,14 @@ function renderEmbeddedWorkspace() {
   const context = createContext(initialContexts.embedded);
   const moduleContent = state.embeddedModule === 'case-details'
     ? renderCaseRemote(context)
-    : `<onefe-action-remote context='${JSON.stringify(context)}'></onefe-action-remote>`;
+    : `<onefe-action-remote context="${escapeHtml(JSON.stringify(context))}"></onefe-action-remote>`;
 
   return `
     <section class="view workspace-view">
       <div class="view-heading">
         <groupui-tag>Embedded Workspace</groupui-tag>
         <groupui-headline heading="h2">Persistente Shell mit Navigation</groupui-headline>
-        <p>Die Shell bleibt sichtbar, waehrend eingebettete Module wechseln.</p>
+        <p>Die Shell bleibt sichtbar, während eingebettete Module wechseln.</p>
       </div>
       <div class="workspace-shell">
         <aside class="workspace-menu">
@@ -1145,18 +1763,22 @@ function renderEmbeddedWorkspace() {
 }
 
 function renderIntegratedExperience() {
-  const context = createContext(initialContexts.integrated);
+  const context = createAftersalesContext({
+    ...initialContexts.integrated,
+    sourceStep: 'integrated-experience',
+    integrationMode: integrationModes.integratedExperience
+  });
 
   return `
     <section class="view">
       <div class="view-heading">
         <groupui-tag>Integrated Experience</groupui-tag>
         <groupui-headline heading="h2">Nahtlose End-to-End Journey</groupui-headline>
-        <p><strong>Dokumentiert:</strong> API-getriebene End-to-End Experience. <strong>Demo-Entscheidung:</strong> Remote-Grenzen werden als technische Herkunft gezeigt, aber nicht als App-Sprung inszeniert.</p>
+        <p>Die technische Herkunft bleibt erklärbar, aber der Nutzer erlebt eine fachlich zusammenhängende Journey.</p>
       </div>
       <div class="process-strip">
         ${journeySteps.map((step, index) => `
-          <div class="process-step ${index === 4 ? 'highlight' : ''}">
+          <div class="process-step ${index === journeySteps.length - 1 ? 'highlight' : ''}">
             <span>${index + 1}</span>
             <strong>${step}</strong>
           </div>
@@ -1164,7 +1786,7 @@ function renderIntegratedExperience() {
       </div>
       <div class="integrated-flow">
         ${renderCaseRemote(context)}
-        <onefe-action-remote context='${JSON.stringify(context)}'></onefe-action-remote>
+        <onefe-action-remote context="${escapeHtml(JSON.stringify(context))}"></onefe-action-remote>
         ${renderVanillaResult(context)}
       </div>
       ${contextPanel(context)}
@@ -1172,21 +1794,28 @@ function renderIntegratedExperience() {
   `;
 }
 
+function patternCard(title, description, action) {
+  return groupuiCard(`
+    <groupui-headline heading="h3">${title}</groupui-headline>
+    <groupui-text>${description}</groupui-text>
+    <groupui-button variant="secondary" data-action="${action}">Muster ausführen</groupui-button>
+  `);
+}
+
 function renderPatterns() {
   return `
     <section class="view">
       <div class="view-heading">
         <groupui-headline heading="h2">Integrationsmuster extra</groupui-headline>
-        <p>Alle Muster nutzen dasselbe Context Model und werden im Event Log sichtbar.</p>
+        <p>Alle Muster nutzen denselben Context-Vertrag und werden im Event Log sichtbar.</p>
       </div>
       <div class="pattern-grid">
-        ${patternCard('New Tab / Window', 'Kontext wird in eine URL serialisiert.', 'new-tab')}
-        ${patternCard('Modal / Dialog', 'Ein Prozessschritt oeffnet eine Ziel-Funktion im Dialog.', 'modal')}
+        ${patternCard('New Tab / Window', 'Kontext wird in eine URL serialisiert und in einer separaten Oberfläche geöffnet.', 'new-tab')}
+        ${patternCard('Modal / Dialog', 'Ein Prozessschritt öffnet eine Zielfunktion im Dialog.', 'modal')}
         ${patternCard('Navigation', 'Shell-Navigation wechselt in ein Zielmodul.', 'navigation')}
         ${patternCard('Prozessschritt-Integration', 'Inline-Funktion ohne sichtbaren App-Sprung.', 'process-step')}
         ${patternCard('Dashboard-Kachel / App-Launcher', 'Kachel startet Ziel-App mit Kontext.', 'launchpad')}
       </div>
-
       <div style="margin-top:18px; display:flex; gap:12px; flex-wrap:wrap;">
         <groupui-button type="button" data-action="new-tab-react">Open New Tab: React Target</groupui-button>
         <groupui-button type="button" data-action="new-tab-angular">Open New Tab: Angular Target</groupui-button>
@@ -1196,18 +1825,10 @@ function renderPatterns() {
       </div>
       <div class="inline-step">
         <groupui-headline heading="h3">Inline-Prozessschritt</groupui-headline>
-        <onefe-action-remote context='${JSON.stringify(createContext(initialContexts.integrated))}'></onefe-action-remote>
+        <onefe-action-remote context="${escapeHtml(JSON.stringify(createAftersalesContext({ sourceStep: 'patterns-inline', integrationMode: integrationModes.integratedExperience })))}"></onefe-action-remote>
       </div>
     </section>
   `;
-}
-
-function patternCard(title, description, action) {
-  return groupuiCard(`
-    <groupui-headline heading="h3">${title}</groupui-headline>
-    <groupui-text>${description}</groupui-text>
-    <groupui-button variant="secondary" data-action="${action}">Muster ausfuehren</groupui-button>
-  `);
 }
 
 function renderDebug() {
@@ -1215,7 +1836,7 @@ function renderDebug() {
     <section class="view debug-view">
       <div class="view-heading">
         <groupui-headline heading="h2">Architektur / Debug / Context</groupui-headline>
-        <p>Dokumentierte Event-Grundlage: Native Events und Custom Events werden unterschieden. Die Bridge hier ist eine Architekturentscheidung.</p>
+        <p>Native Events, BroadcastChannel und postMessage werden getrennt sichtbar protokolliert.</p>
       </div>
       <div class="debug-grid">
         ${contextPanel()}
@@ -1225,33 +1846,19 @@ function renderDebug() {
             ${state.eventLog.length ? state.eventLog.map((entry) => `
               <article>
                 <strong>${entry.time} - ${entry.type}</strong>
-                <pre>${JSON.stringify(entry.detail, null, 2)}</pre>
+                <pre>${escapeHtml(JSON.stringify(entry.detail, null, 2))}</pre>
               </article>
             `).join('') : '<p>Noch keine Events.</p>'}
           </div>
         `)}
         ${groupuiCard(`
           <groupui-headline heading="h3">Micro-Frontend Versionsregel</groupui-headline>
-          <p>Custom Elements koennen pro Tag-Namen nur einmal registriert werden. Unterschiedliche Major-Versionen werden im ersten Prototyp nicht parallel genutzt.</p>
-          <p>Vorsorge: Das Demo-Custom-Element prueft vor Registrierung <code>customElements.get(...)</code>.</p>
+          <p>Custom Elements können pro Tag-Namen nur einmal registriert werden. Unterschiedliche Major-Versionen werden im Prototyp nicht parallel genutzt.</p>
+          <p>Vorsorge: Das Demo-Custom-Element prüft vor Registrierung <code>customElements.get(...)</code>.</p>
         `)}
         ${renderGroupUiRuntimeCard()}
       </div>
     </section>
-  `;
-}
-
-function renderCaseRemote(context) {
-  return `
-    <div class="remote remote-angular">
-      <groupui-text weight="bold">Remote A: Angular Case Zielstruktur</groupui-text>
-      <p>Case Details fuer ${demoCase.id}. Im ersten Prototyp als Host-gerenderter Remote-Slot dargestellt.</p>
-      <dl class="compact-list">
-        <div><dt>Next action</dt><dd>${demoCase.nextAction}</dd></div>
-        <div><dt>Integration</dt><dd>${context.integrationMode}</dd></div>
-      </dl>
-      <groupui-button data-action="modal">Folgeschritt im Modal bearbeiten</groupui-button>
-    </div>
   `;
 }
 
@@ -1264,62 +1871,14 @@ function renderLinkedLaunchModal() {
       <groupui-tag>System handover visible</groupui-tag>
       <groupui-headline heading="h3">Angular Target App opened</groupui-headline>
       <groupui-text>Dies ist die Angular Zielanwendung. Die React Shell bleibt im Hintergrund und kann die Follow-up Note zurückempfangen.</groupui-text>
-
       <div class="launch-details">
-        <div class="launch-detail-row">
-          <span>Application</span>
-          <strong>Case Follow-Up App</strong>
-        </div>
-        <div class="launch-detail-row">
-          <span>Technology</span>
-          <strong>Angular</strong>
-        </div>
-        <div class="launch-detail-row">
-          <span>Integration type</span>
-          <strong>Linked Launchpad</strong>
-        </div>
-        <div class="launch-detail-row">
-          <span>Transport</span>
-          <strong>URL / serialized context</strong>
-        </div>
+        <div class="launch-detail-row"><span>Application</span><strong>Case Follow-Up App</strong></div>
+        <div class="launch-detail-row"><span>Technology</span><strong>Angular</strong></div>
+        <div class="launch-detail-row"><span>Integration type</span><strong>Linked Launchpad</strong></div>
+        <div class="launch-detail-row"><span>Transport</span><strong>URL / serialized context</strong></div>
       </div>
-
-      <div class="modal-system-strip" aria-label="Host and target">
-        <div class="system-badge system-badge-host">
-          <span>Host</span>
-          <strong>React Shell</strong>
-          <div class="logo"><img src="./public/React.png" alt="React Logo" /></div>
-        </div>
-        <div class="system-arrow" aria-hidden="true">→</div>
-        <div class="system-badge system-badge-target">
-          <span>Target</span>
-          <strong>Angular App</strong>
-          <div class="logo"><img src="./public/Angular.png" alt="Angular Logo" /></div>
-        </div>
-      </div>
-
-      <groupui-headline heading="h4">Context received</groupui-headline>
-      <dl class="context-key-values">
-        <div><dt>caseId</dt><dd>${payload.caseId}</dd></div>
-        <div><dt>customerId</dt><dd>${context.customerId}</dd></div>
-      </dl>
-
       <groupui-headline heading="h4">Transfer payload</groupui-headline>
-      <pre>${JSON.stringify(payload, null, 2)}</pre>
-
-      <section class="proof-panel proof-inline" aria-label="Proof block">
-        <groupui-text weight="bold">Proof</groupui-text>
-        <p>React Shell sends this payload to the Angular Target App. The returned note will travel back to the host.</p>
-        <pre class="code-proof">// app.js
-function linkedLaunchContext() {
-  return createContext({
-    sourceApp: 'react-shell',
-    targetApp: 'case-follow-up-app',
-    integrationMode: integrationModes.linkedLaunchpad
-  });
-}</pre>
-      </section>
-
+      <pre>${escapeHtml(JSON.stringify(payload, null, 2))}</pre>
       <form class="modal-form" data-action="linked-form-submit">
         <label>
           <span>Follow-up note</span>
@@ -1327,7 +1886,6 @@ function linkedLaunchContext() {
         </label>
         <groupui-button type="submit">Save</groupui-button>
       </form>
-
       <div class="action-row right">
         <groupui-button variant="secondary" data-action="close-modal">Close</groupui-button>
       </div>
@@ -1335,111 +1893,18 @@ function linkedLaunchContext() {
   `;
 }
 
-function openFlightCalendarModal(context) {
-  const base = import.meta.env.BASE_URL;
-  const url = `${window.location.origin}${base}calendar-target.html?context=${serializeContext(context)}&v=date-transfer-3`;
-
-  calendarModalBody.innerHTML = `
-    <div class="calendar-modal-shell">
-      <div class="calendar-modal-header">
-        <div>
-          <groupui-tag>Schritt 2 · Angular Calendar</groupui-tag>
-          <groupui-headline heading="h3">Reisedatum wählen</groupui-headline>
-          <groupui-text>Die React Shell bleibt sichtbar. Der Kalender läuft als echte Angular App im iframe.</groupui-text>
-        </div>
-        <groupui-button variant="secondary" type="button" data-action="close-calendar-modal">Schließen</groupui-button>
-      </div>
-      <iframe
-        class="calendar-modal-frame"
-        title="Angular Calendar App"
-        src="${url}"
-      ></iframe>
-    </div>
-  `;
-
-  recordEvent(state.eventLog, 'open-flight-calendar-modal', { url, context, target: 'calendar-target.html' });
-  calendarModal.showModal();
-}
-
-function createFlightOptionsTargetUrl(context) {
-  const base = import.meta.env.BASE_URL;
-  return `${window.location.origin}${base}target-svelte.html?context=${serializeContext(context)}&v=${flightOptionsTargetVersion}`;
-}
-
-function createFlightExtrasTargetUrl(context) {
-  const base = import.meta.env.BASE_URL;
-  return `${window.location.origin}${base}target-stencil.html?context=${serializeContext(context)}&v=${flightExtrasTargetVersion}`;
-}
-
-function openFlightOptionsModal(context) {
-  const url = createFlightOptionsTargetUrl(context);
-
-  calendarModalBody.innerHTML = `
-    <div class="calendar-modal-shell">
-      <div class="calendar-modal-header">
-        <div>
-          <groupui-tag>Schritt 3 · Svelte Remote</groupui-tag>
-          <groupui-headline heading="h3">Flugoption auswählen</groupui-headline>
-          <groupui-text>Die React Shell bleibt sichtbar. Die Flugauswahl läuft als Svelte-Remote im iframe.</groupui-text>
-        </div>
-        <groupui-button variant="secondary" type="button" data-action="close-calendar-modal">Schließen</groupui-button>
-      </div>
-      <iframe
-        class="calendar-modal-frame"
-        title="Svelte Flight Options App"
-        src="${url}"
-      ></iframe>
-    </div>
-  `;
-
-  recordEvent(state.eventLog, 'open-flight-options-modal', { url, context, target: 'target-svelte.html' });
-  calendarModal.showModal();
-}
-
-function openFlightExtrasModal(context) {
-  const url = createFlightExtrasTargetUrl(context);
-
-  calendarModalBody.innerHTML = `
-    <div class="calendar-modal-shell">
-      <div class="calendar-modal-header">
-        <div>
-          <groupui-tag>Schritt 4 · Native Web Component</groupui-tag>
-          <groupui-headline heading="h3">Reise-Extras ändern</groupui-headline>
-          <groupui-text>Die Web-Components-Ziel-App läuft im iframe und gibt die Extras an die React Shell zurück.</groupui-text>
-        </div>
-        <groupui-button variant="secondary" type="button" data-action="close-calendar-modal">Schließen</groupui-button>
-      </div>
-      <iframe
-        class="calendar-modal-frame"
-        title="Web Component Flight Extras App"
-        src="${url}"
-      ></iframe>
-    </div>
-  `;
-
-  recordEvent(state.eventLog, 'open-flight-extras-modal', { url, context, target: 'target-stencil.html' });
-  calendarModal.showModal();
-}
-
-function closeFlightCalendarModal() {
-  calendarModal.close();
-  calendarModalBody.innerHTML = '';
-  recordEvent(state.eventLog, 'calendar-modal-close', { sourceApp: 'react-shell' });
-}
-
 function renderModal() {
   if (!state.modalContext) return;
 
   if (state.modalContext.integrationMode === integrationModes.linkedLaunchpad) {
-    return renderLinkedLaunchModal();
+    renderLinkedLaunchModal();
+    return;
   }
 
-  // Standard-Modal für andere Integrationsmodi
-  const context = state.modalContext;
   modalBody.innerHTML = `
     <div class="g-modal-content modal-inner">
       <groupui-headline heading="h3">Modal Context</groupui-headline>
-      <pre>${JSON.stringify(context, null, 2)}</pre>
+      <pre>${escapeHtml(JSON.stringify(state.modalContext, null, 2))}</pre>
       <div class="action-row right">
         <groupui-button variant="secondary" data-action="close-modal">Close</groupui-button>
       </div>
@@ -1448,7 +1913,10 @@ function renderModal() {
 }
 
 function renderActiveView() {
+  if (state.activeView === 'aftersales-journey') return renderAftersalesJourney();
   if (state.activeView === 'comparison') return renderComparison();
+  if (state.activeView === 'technology-overview') return renderTechnologyOverview();
+  if (state.activeView === 'implementation') return renderImplementation();
   if (state.activeView === 'flight-booking') return renderFlightBooking();
   if (isolatedFlightBookingPages[state.activeView]) return renderIsolatedFlightBookingPage(state.activeView);
   if (state.activeView === integrationModes.linkedLaunchpad) return renderLinkedLaunchpad();
@@ -1470,43 +1938,39 @@ function render() {
   syncColorModeToFrames(state.colorMode);
 }
 
+function ensureBroadcastChannel(context) {
+  const channelName = `onefe-channel-${context.caseId}`;
+  if (state.broadcastChannels[channelName]) return;
+
+  try {
+    const channel = new BroadcastChannel(channelName);
+    channel.onmessage = (event) => {
+      if (event.data && [
+        'follow-up-return',
+        'appointment-transfer',
+        'service-package-transfer',
+        'service-extras-transfer',
+        'flight-option-transfer',
+        'flight-extras-transfer'
+      ].includes(event.data.type)) {
+        receiveRemotePayload(event.data, 'channel-message');
+        render();
+      }
+    };
+    state.broadcastChannels[channelName] = channel;
+  } catch (error) {
+    console.warn('BroadcastChannel not available:', error);
+  }
+}
+
 function handleAction(action, sourceElement) {
   if (action === 'launchpad') {
     navigate(integrationModes.linkedLaunchpad, initialContexts.launchpad);
   }
 
-  if (action === 'linked-in-shell') {
-    navigate(integrationModes.linkedLaunchpad, createContext({
-      ...state.activeContext,
-      sourceApp: 'react-shell',
-      targetApp: 'case-follow-up-app',
-      sourceStep: 'overview-linked-integration-demo',
-      integrationMode: integrationModes.linkedLaunchpad
-    }));
-  }
-
   if (action === 'new-tab' || action === 'new-tab-react' || action === 'new-tab-angular' || action === 'new-tab-calendar' || action === 'new-tab-svelte' || action === 'new-tab-stencil') {
-    const context = createContext({ sourceStep: 'new-tab-launch', integrationMode: integrationModes.newTab });
-    const chName = 'onefe-channel-' + context.caseId;
-
-    // ensure a BroadcastChannel exists to receive replies from the new tab
-    if (!state.broadcastChannels) state.broadcastChannels = {};
-    if (!state.broadcastChannels[chName]) {
-      try {
-        const ch = new BroadcastChannel(chName);
-        ch.onmessage = (ev) => {
-          if (ev.data && (ev.data.type === 'follow-up-return' || ev.data.type === 'appointment-transfer' || ev.data.type === 'flight-option-transfer' || ev.data.type === 'flight-extras-transfer')) {
-            receiveRemotePayload(ev.data, 'channel-message');
-            render();
-          }
-        };
-        state.broadcastChannels[chName] = ch;
-      } catch (e) {
-        // BroadcastChannel not available; fall back to postMessage via window handle
-        console.warn('BroadcastChannel not available:', e);
-      }
-    }
-
+    const context = createAftersalesContext({ sourceStep: 'new-tab-launch', integrationMode: integrationModes.newTab });
+    ensureBroadcastChannel(context);
     const serialized = serializeContext(context);
     let targetPage = 'linked-host.html';
     if (action === 'new-tab-react') targetPage = 'target-react.html';
@@ -1520,34 +1984,61 @@ function handleAction(action, sourceElement) {
     window.open(url, '_blank');
   }
 
-  if (action === 'open-flight-calendar') {
-    const context = createFlightBookingContext({
-      sourceStep: 'flight-date-selection',
-      integrationMode: integrationModes.modal
-    });
-    openFlightCalendarModal(context);
+  if (action === 'open-aftersales-calendar') {
+    state.aftersales.currentStep = 2;
+    openFlightCalendarModal(aftersalesContextForStep('aftersales-capacity-selection', integrationModes.modal, 'angular-workshop-capacity-target'));
   }
 
-  if (action === 'close-calendar-modal') {
-    closeFlightCalendarModal();
+  if (action === 'open-aftersales-packages') {
+    state.aftersales.currentStep = 3;
+    openFlightOptionsModal(aftersalesContextForStep('aftersales-package-selection', integrationModes.modal, 'svelte-service-package-target'));
+  }
+
+  if (action === 'open-aftersales-extras') {
+    state.aftersales.currentStep = 4;
+    openFlightExtrasModal(aftersalesContextForStep('aftersales-extras-selection', integrationModes.modal, 'webcomponents-aftersales-extras-target'));
+  }
+
+  if (action === 'reset-aftersales') {
+    state.aftersales = {
+      ...state.aftersales,
+      currentStep: 1,
+      selectedAppointment: null,
+      selectedPackage: null,
+      serviceExtras: null
+    };
+    state.activeContext = createAftersalesContext({
+      sourceStep: 'aftersales-reset',
+      integrationMode: integrationModes.dashboardLauncher
+    });
+    render();
+  }
+
+  if (action === 'open-flight-calendar') {
+    openFlightCalendarModal(createFlightBookingContext({
+      sourceStep: 'flight-date-selection',
+      integrationMode: integrationModes.modal
+    }));
   }
 
   if (action === 'open-flight-options') {
-    const context = createFlightBookingContext({
+    openFlightOptionsModal(createFlightBookingContext({
       sourceStep: 'flight-option-selection',
       targetApp: 'svelte-flight-options-target',
       integrationMode: integrationModes.modal
-    });
-    openFlightOptionsModal(context);
+    }));
   }
 
   if (action === 'open-flight-extras') {
-    const context = createFlightBookingContext({
+    openFlightExtrasModal(createFlightBookingContext({
       sourceStep: 'flight-extras-selection',
       targetApp: 'stencil-flight-extras-target',
       integrationMode: integrationModes.modal
-    });
-    openFlightExtrasModal(context);
+    }));
+  }
+
+  if (action === 'close-journey-modal') {
+    closeJourneyModal();
   }
 
   if (action === 'select-shell-flight-option') {
@@ -1566,13 +2057,17 @@ function handleAction(action, sourceElement) {
     render();
   }
 
-  if (action === 'modal') {
-    openModal(createContext({ sourceStep: 'modal-action', integrationMode: integrationModes.modal }));
+  if (action === 'linked-launch') {
+    state.modalContext = linkedLaunchContext();
+    renderModal();
+    modal.showModal();
+    return;
   }
 
-  if (action === 'linked-launch') {
-    openModal(linkedLaunchContext());
-    return;
+  if (action === 'modal') {
+    state.modalContext = createContext({ sourceStep: 'modal-action', integrationMode: integrationModes.modal });
+    renderModal();
+    modal.showModal();
   }
 
   if (action === 'linked-form-submit') {
@@ -1593,7 +2088,7 @@ function handleAction(action, sourceElement) {
   }
 
   if (action === 'process-step') {
-    navigate(integrationModes.integratedExperience, createContext({ sourceStep: 'inline-process-step', integrationMode: integrationModes.processStep }));
+    navigate(integrationModes.integratedExperience, createAftersalesContext({ sourceStep: 'inline-process-step', integrationMode: integrationModes.processStep }));
   }
 
   if (action === 'emit-context') {
@@ -1620,7 +2115,6 @@ function handleAction(action, sourceElement) {
 
 document.addEventListener('submit', (event) => {
   const actionTarget = event.target.closest('[data-action]');
-
   if (actionTarget) {
     event.preventDefault();
     recordEvent(state.eventLog, 'native-event', { type: 'submit', action: actionTarget.dataset.action });
@@ -1647,11 +2141,10 @@ function navigateFlightStep(step) {
   }
 
   if (step === 2) {
-    const context = createFlightBookingContext({
+    openFlightCalendarModal(createFlightBookingContext({
       sourceStep: 'flight-date-selection-stepper',
       integrationMode: integrationModes.modal
-    });
-    openFlightCalendarModal(context);
+    }));
     return;
   }
 
@@ -1680,7 +2173,12 @@ document.addEventListener('click', (event) => {
   }
 
   if (navTarget) {
-    navigate(navTarget.dataset.nav, createContext({ sourceStep: 'shell-nav', integrationMode: navTarget.dataset.nav }));
+    const targetView = navTarget.dataset.nav;
+    if (targetView === 'aftersales-journey') {
+      navigate(targetView, createAftersalesContext({ sourceStep: 'shell-nav', integrationMode: integrationModes.navigation }));
+      return;
+    }
+    navigate(targetView, createContext({ sourceStep: 'shell-nav', integrationMode: integrationModes.navigation }));
   }
 
   if (moduleTarget) {
@@ -1691,14 +2189,14 @@ document.addEventListener('click', (event) => {
 });
 
 function handleFlightFieldChange(event) {
-  const field = event.target.closest('[data-flight-field]');
-
+  const field = getDataFieldElement(event, 'flightField');
   if (!field) return;
 
   const key = field.dataset.flightField;
+  const rawValue = readFieldValue(field, event);
   const value = key === 'passengers'
-    ? Math.max(1, Number(field.value || 1))
-    : field.value;
+    ? Math.max(1, Number(rawValue || 1))
+    : rawValue;
 
   state.flightBooking = {
     ...state.flightBooking,
@@ -1709,8 +2207,55 @@ function handleFlightFieldChange(event) {
   render();
 }
 
-document.addEventListener('change', handleFlightFieldChange);
-document.addEventListener('input', handleFlightFieldChange);
+function handleAftersalesFieldChange(event) {
+  const field = getDataFieldElement(event, 'aftersalesField');
+  if (!field) return;
+
+  const key = field.dataset.aftersalesField;
+  const rawValue = readFieldValue(field, event);
+  const value = key === 'mileageKm'
+    ? Math.max(0, Number(rawValue || 0))
+    : rawValue;
+
+  state.aftersales = {
+    ...state.aftersales,
+    [key]: value
+  };
+  state.activeContext = createAftersalesContext({
+    sourceStep: 'aftersales-shell-update',
+    [key]: value
+  });
+  recordEvent(state.eventLog, 'aftersales-context-update', { field: key, value });
+  render();
+}
+
+function getDataFieldElement(event, datasetKey) {
+  const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
+  return path.find((node) => node?.dataset?.[datasetKey]) || event.target.closest?.(`[data-${datasetKey.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`)}]`) || null;
+}
+
+function readFieldValue(field, event) {
+  return field.value
+    ?? field.getAttribute?.('value')
+    ?? event.detail?.value
+    ?? event.target?.value
+    ?? '';
+}
+
+document.addEventListener('change', (event) => {
+  handleFlightFieldChange(event);
+  handleAftersalesFieldChange(event);
+});
+
+document.addEventListener('input', (event) => {
+  handleFlightFieldChange(event);
+  handleAftersalesFieldChange(event);
+});
+
+document.addEventListener('groupuiChange', (event) => {
+  handleFlightFieldChange(event);
+  handleAftersalesFieldChange(event);
+});
 
 window.addEventListener('popstate', () => {
   state.activeView = readViewFromUrl();
@@ -1729,6 +2274,10 @@ window.onefeTestHelpers = {
   },
   getState() {
     return state;
+  },
+  receivePayload(payload) {
+    receiveRemotePayload(payload, 'test-helper');
+    render();
   }
 };
 

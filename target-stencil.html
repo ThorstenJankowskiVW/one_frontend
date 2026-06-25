@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Web Component - Flight Extras</title>
+  <title>Web Component - Journey Extras</title>
   <link rel="stylesheet" href="./groupui-theme.css">
-  <link rel="stylesheet" href="./styles.css?v=flight-extras-1">
+  <link rel="stylesheet" href="./styles.css?v=aftersales-extras-1">
   <script type="module">
     import { defineCustomElements } from '@group-ui/group-ui/dist/loader/index.es2017.js';
 
@@ -19,7 +19,7 @@
       background: var(--onefe-bg);
     }
 
-    flight-extras-remote {
+    journey-extras-remote {
       display: block;
     }
 
@@ -31,7 +31,8 @@
       padding: 24px;
     }
 
-    .extras-form {
+    .extras-form,
+    .extras-summary {
       display: grid;
       gap: 18px;
     }
@@ -47,7 +48,8 @@
       gap: 8px;
     }
 
-    .extras-field span {
+    .extras-field span,
+    .extras-checks legend {
       color: var(--onefe-muted);
       font-size: 12px;
       font-weight: 700;
@@ -55,60 +57,100 @@
 
     .extras-checks {
       display: grid;
-      gap: 12px;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      border: 0;
     }
 
-    .extras-summary {
+    .extras-checks label {
       display: grid;
+      grid-template-columns: auto 1fr auto;
       gap: 12px;
+      align-items: center;
+      padding: 14px 16px;
+      border: 1px solid var(--groupui-sys-color-line-weak);
+      border-radius: var(--groupui-sys-border-radius-s);
+      background: var(--groupui-sys-color-background-base);
+    }
+
+    .extras-checks small {
+      color: var(--groupui-sys-color-text-weaker);
+    }
+
+    .extras-summary pre {
+      margin: 0;
     }
 
     @media (max-width: 760px) {
       .extras-grid {
         grid-template-columns: 1fr;
       }
+
+      .extras-checks label {
+        grid-template-columns: auto 1fr;
+      }
+
+      .extras-checks label > strong {
+        grid-column: 2;
+      }
     }
   </style>
 </head>
 <body data-theme="light">
-  <flight-extras-remote></flight-extras-remote>
+  <journey-extras-remote></journey-extras-remote>
 
   <script type="module">
+    import { serviceExtras as aftersalesExtras } from './packages/demo-data/src/cases.js';
+
     function deserializeParam() {
       const url = new URL(window.location.href);
       const raw = url.searchParams.get('context');
       if (!raw) return {};
-      try { return JSON.parse(decodeURIComponent(raw)); } catch (error) { return {}; }
+      try {
+        return JSON.parse(decodeURIComponent(raw));
+      } catch {
+        return {};
+      }
     }
 
     const context = deserializeParam();
-    const initialExtras = context.flightBooking?.flightExtras || context.selectedFlightExtras || {};
+    const isAftersales = context.journeyType !== 'flight-booking';
+    const initialExtras = context.serviceExtras || context.selectedServiceExtras || context.selectedFlightExtras || context.flightBooking?.flightExtras || {};
 
-    const seatPrices = {
+    const flightSeatPrices = {
       standard: 0,
       window: 18,
       extraLegroom: 42
     };
 
-    const baggagePrices = {
+    const flightBaggagePrices = {
       cabin: 0,
       checked: 35,
       sports: 65
     };
 
-    class FlightExtrasRemote extends HTMLElement {
+    class JourneyExtrasRemote extends HTMLElement {
       constructor() {
         super();
-        this.state = {
-          seat: initialExtras.seatCode || 'window',
-          baggage: initialExtras.baggageCode || 'checked',
-          priorityBoarding: initialExtras.priorityBoarding ?? true,
-          carbonOffset: initialExtras.carbonOffset ?? false
-        };
+        this.state = isAftersales
+          ? {
+              selectedIds: (initialExtras.selectedExtras || []).map((item) => item.id),
+              mobilityNeed: initialExtras.mobilityNeed || 'none',
+              partsStatus: initialExtras.partsStatus || 'check-pending',
+              campaignStatus: initialExtras.campaignStatus || 'no-active-campaign',
+              followUpRequired: initialExtras.followUpRequired ?? false
+            }
+          : {
+              seat: initialExtras.seatCode || 'window',
+              baggage: initialExtras.baggageCode || 'checked',
+              priorityBoarding: initialExtras.priorityBoarding ?? true,
+              carbonOffset: initialExtras.carbonOffset ?? false
+            };
 
         try {
-          this.channel = new BroadcastChannel('onefe-channel-' + (context.caseId || 'unknown'));
-        } catch (error) {
+          this.channel = new BroadcastChannel(`onefe-channel-${context.caseId || 'unknown'}`);
+        } catch {
           this.channel = null;
         }
       }
@@ -119,6 +161,18 @@
       }
 
       get selectedExtras() {
+        const selectedItems = aftersalesExtras.filter((item) => this.state.selectedIds.includes(item.id));
+        return {
+          selectedExtras: selectedItems,
+          mobilityNeed: this.state.mobilityNeed,
+          partsStatus: this.state.partsStatus,
+          campaignStatus: this.state.campaignStatus,
+          followUpRequired: this.state.followUpRequired,
+          totalPrice: selectedItems.reduce((sum, item) => sum + item.price, 0)
+        };
+      }
+
+      get selectedFlightExtras() {
         const seatLabels = {
           standard: 'Standardplatz',
           window: 'Fensterplatz',
@@ -141,7 +195,7 @@
           baggage: baggageLabels[this.state.baggage],
           priorityBoarding: this.state.priorityBoarding,
           carbonOffset: this.state.carbonOffset,
-          totalPrice: seatPrices[this.state.seat] + baggagePrices[this.state.baggage] + priorityPrice + carbonPrice
+          totalPrice: flightSeatPrices[this.state.seat] + flightBaggagePrices[this.state.baggage] + priorityPrice + carbonPrice
         };
       }
 
@@ -154,20 +208,40 @@
         this.bindEvents();
       }
 
+      toggleAftersalesExtra(extraId, checked) {
+        const selectedIds = checked
+          ? [...new Set([...this.state.selectedIds, extraId])]
+          : this.state.selectedIds.filter((id) => id !== extraId);
+        this.updateState({ selectedIds });
+      }
+
       postPayload() {
-        const flightExtras = this.selectedExtras;
-        const payload = {
-          type: 'flight-extras-transfer',
-          from: 'stencil-flight-extras-target',
-          targetApp: 'react-shell',
-          note: `Extras übernommen: ${flightExtras.totalPrice} EUR`,
-          flightExtras,
-          context: {
-            ...context,
-            sourceStep: 'flight-extras-selected',
-            selectedFlightExtras: flightExtras
-          }
-        };
+        const payload = isAftersales
+          ? {
+              type: 'service-extras-transfer',
+              from: 'webcomponents-aftersales-extras-target',
+              targetApp: 'react-shell',
+              note: `Service extras selected: ${this.selectedExtras.totalPrice} EUR`,
+              serviceExtras: this.selectedExtras,
+              context: {
+                ...context,
+                sourceStep: 'service-extras-selected',
+                selectedServiceExtras: this.selectedExtras.selectedExtras,
+                serviceExtras: this.selectedExtras
+              }
+            }
+          : {
+              type: 'flight-extras-transfer',
+              from: 'stencil-flight-extras-target',
+              targetApp: 'react-shell',
+              note: `Extras übernommen: ${this.selectedFlightExtras.totalPrice} EUR`,
+              flightExtras: this.selectedFlightExtras,
+              context: {
+                ...context,
+                sourceStep: 'flight-extras-selected',
+                selectedFlightExtras: this.selectedFlightExtras
+              }
+            };
 
         this.channel?.postMessage(payload);
 
@@ -181,33 +255,136 @@
 
         const status = this.querySelector('#extrasStatus');
         if (status) {
-          status.textContent = `Extras an Host übergeben: ${flightExtras.totalPrice} EUR`;
+          status.textContent = isAftersales
+            ? `Extras an Host übergeben: ${this.selectedExtras.totalPrice} EUR`
+            : `Extras an Host übergeben: ${this.selectedFlightExtras.totalPrice} EUR`;
           status.hidden = false;
         }
       }
 
       bindEvents() {
-        this.querySelector('#seatSelect')?.addEventListener('change', (event) => {
-          this.updateState({ seat: event.target.value });
-        });
+        if (isAftersales) {
+          this.querySelectorAll('[data-extra-id]').forEach((input) => {
+            input.addEventListener('change', (event) => {
+              this.toggleAftersalesExtra(event.target.dataset.extraId, event.target.checked);
+            });
+          });
 
-        this.querySelector('#baggageSelect')?.addEventListener('change', (event) => {
-          this.updateState({ baggage: event.target.value });
-        });
+          this.querySelector('#mobilitySelect')?.addEventListener('change', (event) => {
+            this.updateState({ mobilityNeed: event.target.value });
+          });
 
-        this.querySelector('#priorityCheck')?.addEventListener('change', (event) => {
-          this.updateState({ priorityBoarding: event.target.checked });
-        });
+          this.querySelector('#partsStatusSelect')?.addEventListener('change', (event) => {
+            this.updateState({ partsStatus: event.target.value });
+          });
 
-        this.querySelector('#carbonCheck')?.addEventListener('change', (event) => {
-          this.updateState({ carbonOffset: event.target.checked });
-        });
+          this.querySelector('#campaignStatusSelect')?.addEventListener('change', (event) => {
+            this.updateState({ campaignStatus: event.target.value });
+          });
+
+          this.querySelector('#followUpRequired')?.addEventListener('change', (event) => {
+            this.updateState({ followUpRequired: event.target.checked });
+          });
+        } else {
+          this.querySelector('#seatSelect')?.addEventListener('change', (event) => {
+            this.updateState({ seat: event.target.value });
+          });
+
+          this.querySelector('#baggageSelect')?.addEventListener('change', (event) => {
+            this.updateState({ baggage: event.target.value });
+          });
+
+          this.querySelector('#priorityCheck')?.addEventListener('change', (event) => {
+            this.updateState({ priorityBoarding: event.target.checked });
+          });
+
+          this.querySelector('#carbonCheck')?.addEventListener('change', (event) => {
+            this.updateState({ carbonOffset: event.target.checked });
+          });
+        }
 
         this.querySelector('#submitExtras')?.addEventListener('click', () => this.postPayload());
       }
 
-      render() {
+      renderAftersales() {
         const extras = this.selectedExtras;
+
+        this.innerHTML = `
+          <main class="extras-root">
+            <groupui-card padding="24px">
+              <groupui-tag>Web Component Target</groupui-tag>
+              <groupui-headline heading="h1">Extras und Mobilität auswählen</groupui-headline>
+              <groupui-text>
+                ${context.vehicleModel || 'Volkswagen ID.7 Tourer'} · ${context.appointmentDate || 'Termin offen'} · ${context.servicePackageLabel || 'Paket offen'}
+              </groupui-text>
+            </groupui-card>
+
+            <groupui-card padding="24px" class="extras-form">
+              <groupui-headline heading="h2">Optionale Leistungen</groupui-headline>
+              <groupui-text>Dieses Custom Element hält eigenen State und gibt Teile-, Mobilitäts- und Extras-Entscheidungen strukturiert zurück.</groupui-text>
+
+              <fieldset class="extras-checks">
+                <legend>Extras</legend>
+                ${aftersalesExtras.map((item) => `
+                  <label>
+                    <input type="checkbox" data-extra-id="${item.id}" ${this.state.selectedIds.includes(item.id) ? 'checked' : ''} />
+                    <span>
+                      <strong>${item.label}</strong>
+                      <small>${item.type} · ${item.availability}</small>
+                    </span>
+                    <strong>${item.price} EUR</strong>
+                  </label>
+                `).join('')}
+              </fieldset>
+
+              <div class="extras-grid">
+                <label class="extras-field">
+                  <span>Mobility need</span>
+                  <select id="mobilitySelect">
+                    <option value="none" ${this.state.mobilityNeed === 'none' ? 'selected' : ''}>No mobility support</option>
+                    <option value="shuttle" ${this.state.mobilityNeed === 'shuttle' ? 'selected' : ''}>Shuttle service</option>
+                    <option value="replacement-vehicle" ${this.state.mobilityNeed === 'replacement-vehicle' ? 'selected' : ''}>Replacement vehicle</option>
+                  </select>
+                </label>
+
+                <label class="extras-field">
+                  <span>Parts status</span>
+                  <select id="partsStatusSelect">
+                    <option value="check-pending" ${this.state.partsStatus === 'check-pending' ? 'selected' : ''}>Check pending</option>
+                    <option value="available" ${this.state.partsStatus === 'available' ? 'selected' : ''}>Available</option>
+                    <option value="ordered" ${this.state.partsStatus === 'ordered' ? 'selected' : ''}>Ordered</option>
+                  </select>
+                </label>
+
+                <label class="extras-field">
+                  <span>Campaign status</span>
+                  <select id="campaignStatusSelect">
+                    <option value="no-active-campaign" ${this.state.campaignStatus === 'no-active-campaign' ? 'selected' : ''}>No active campaign</option>
+                    <option value="campaign-found" ${this.state.campaignStatus === 'campaign-found' ? 'selected' : ''}>Campaign found</option>
+                  </select>
+                </label>
+
+                <label class="extras-field">
+                  <span>Follow-up</span>
+                  <input id="followUpRequired" type="checkbox" ${this.state.followUpRequired ? 'checked' : ''} />
+                </label>
+              </div>
+
+              <groupui-button id="submitExtras" type="button">Extras an Shell übergeben</groupui-button>
+              <groupui-text id="extrasStatus" class="save-message" hidden></groupui-text>
+            </groupui-card>
+
+            <groupui-card padding="24px" class="extras-summary">
+              <groupui-tag>Selection summary</groupui-tag>
+              <groupui-headline heading="h3">Aktuelle Auswahl</groupui-headline>
+              <pre>${JSON.stringify(extras, null, 2)}</pre>
+            </groupui-card>
+          </main>
+        `;
+      }
+
+      renderFlight() {
+        const extras = this.selectedFlightExtras;
 
         this.innerHTML = `
           <main class="extras-root">
@@ -243,50 +420,45 @@
                 </label>
               </div>
 
-              <div class="extras-checks">
+              <fieldset class="extras-checks">
+                <legend>Optionen</legend>
                 <label>
                   <input id="priorityCheck" type="checkbox" ${this.state.priorityBoarding ? 'checked' : ''} />
-                  Priority Boarding · 12 EUR
+                  <span><strong>Priority Boarding</strong><small>Schnelleres Boarding</small></span>
+                  <strong>12 EUR</strong>
                 </label>
                 <label>
                   <input id="carbonCheck" type="checkbox" ${this.state.carbonOffset ? 'checked' : ''} />
-                  CO2-Ausgleich · 8 EUR
+                  <span><strong>CO2-Ausgleich</strong><small>Nachhaltigkeitsbeitrag</small></span>
+                  <strong>8 EUR</strong>
                 </label>
-              </div>
+              </fieldset>
 
-              <div class="action-row">
-                <groupui-button type="button" id="submitExtras">Extras an Host zurückgeben</groupui-button>
-              </div>
-              <groupui-text id="extrasStatus" hidden></groupui-text>
+              <groupui-button id="submitExtras" type="button">Extras an Shell übergeben</groupui-button>
+              <groupui-text id="extrasStatus" class="save-message" hidden></groupui-text>
             </groupui-card>
 
-            <groupui-card padding="20px" class="extras-summary">
-              <groupui-tag>Aktuelle Extras</groupui-tag>
-              <groupui-headline heading="h3">${extras.totalPrice} EUR</groupui-headline>
-              <dl class="compact-list">
-                <div><dt>Sitzplatz</dt><dd>${extras.seat}</dd></div>
-                <div><dt>Gepäck</dt><dd>${extras.baggage}</dd></div>
-                <div><dt>Priority</dt><dd>${extras.priorityBoarding ? 'Ja' : 'Nein'}</dd></div>
-                <div><dt>CO2-Ausgleich</dt><dd>${extras.carbonOffset ? 'Ja' : 'Nein'}</dd></div>
-              </dl>
-            </groupui-card>
-
-            <groupui-card padding="20px">
-              <groupui-tag>Runtime Proof</groupui-tag>
-              <groupui-headline heading="h3">Native Custom Element</groupui-headline>
-              <groupui-text>
-                Die sichtbare Anwendung wird von <code>&lt;flight-extras-remote&gt;</code> gerendert.
-                Sie demonstriert die Stencil-artige Integrationsgrenze ohne einen Stencil-Compiler zu behaupten.
-              </groupui-text>
-              <pre>${JSON.stringify(context, null, 2)}</pre>
+            <groupui-card padding="24px" class="extras-summary">
+              <groupui-tag>Selection summary</groupui-tag>
+              <groupui-headline heading="h3">Aktuelle Auswahl</groupui-headline>
+              <pre>${JSON.stringify(extras, null, 2)}</pre>
             </groupui-card>
           </main>
         `;
       }
+
+      render() {
+        if (isAftersales) {
+          this.renderAftersales();
+          return;
+        }
+
+        this.renderFlight();
+      }
     }
 
-    if (!customElements.get('flight-extras-remote')) {
-      customElements.define('flight-extras-remote', FlightExtrasRemote);
+    if (!customElements.get('journey-extras-remote')) {
+      customElements.define('journey-extras-remote', JourneyExtrasRemote);
     }
   </script>
 </body>

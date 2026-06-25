@@ -1,11 +1,12 @@
 import 'reflect-metadata';
 import 'zone.js';
 import { defineCustomElements } from '@group-ui/group-ui/dist/loader/index.es2017.js';
-import './calendar-target.css?v=date-transfer-3';
+import './calendar-target.css?v=aftersales-capacity-1';
 import '@angular/compiler';
 import { BrowserModule } from '@angular/platform-browser';
-import { Component, NgModule, CUSTOM_ELEMENTS_SCHEMA, VERSION } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, NgModule, VERSION } from '@angular/core';
 import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
+import { workshopAppointments } from './packages/demo-data/src/cases.js';
 import { readLinkedContextFromUrl } from './linked-context.js';
 
 defineCustomElements().catch((error) => {
@@ -16,7 +17,8 @@ const context = readLinkedContextFromUrl();
 
 class CalendarTargetComponent {
   context = context;
-  selectedDate = context.selectedAppointmentDate || context.departureDate || context.flightBooking?.departureDate || '';
+  isAftersales = context.journeyType !== 'flight-booking';
+  selectedDate = context.appointmentDate || context.selectedAppointmentDate || context.departureDate || context.flightBooking?.departureDate || '';
   changeDetectionTicks = 0;
   angularVersion = VERSION.full;
   zoneProof = window.Zone ? 'Zone.js aktiv' : 'Zone.js nicht gefunden';
@@ -26,18 +28,36 @@ class CalendarTargetComponent {
   transferError = '';
   transferPayloadJson = '';
   channel = null;
-  events = [
-    { date: '2026-06-16', title: 'Technischer Check-in', type: 'warning' },
-    { date: '2026-06-18', title: 'Service-Termin', type: 'success' },
-    { date: '2026-06-24', title: 'Review mit Stakeholdern', type: 'warning' },
-    { date: '2026-07-02', title: 'Release-Go/No-Go', type: 'success' }
-  ];
+  entries = this.isAftersales
+    ? workshopAppointments
+    : [
+        {
+          id: 'FLIGHT-2026-06-18',
+          date: '2026-06-18',
+          timeLabel: '08:35',
+          title: 'Abflugdatum',
+          location: `${context.origin || 'Hannover'} → ${context.destination || 'Barcelona'}`,
+          capacityLabel: 'Direktflug-Fenster',
+          status: 'recommended',
+          durationMinutes: 0
+        },
+        {
+          id: 'FLIGHT-2026-06-24',
+          date: '2026-06-24',
+          timeLabel: '10:15',
+          title: 'Alternative Abreise',
+          location: `${context.origin || 'Hannover'} → ${context.destination || 'Barcelona'}`,
+          capacityLabel: 'Spätere Abreise',
+          status: 'available',
+          durationMinutes: 0
+        }
+      ];
 
   constructor() {
     try {
-      const channelName = 'onefe-channel-' + (this.context?.caseId || 'unknown');
+      const channelName = `onefe-channel-${this.context?.caseId || 'unknown'}`;
       this.channel = new BroadcastChannel(channelName);
-    } catch (error) {
+    } catch {
       this.channel = null;
     }
   }
@@ -79,7 +99,7 @@ class CalendarTargetComponent {
     }
   }
 
-  transferSelectedAppointment(datePicker = null) {
+  transferSelection(datePicker = null) {
     this.useDatePickerValue(datePicker);
 
     if (!this.normalizedSelectedDate) {
@@ -88,73 +108,89 @@ class CalendarTargetComponent {
       return;
     }
 
-    const transferPayload = this.createAppointmentTransferPayload();
-
+    const transferPayload = this.createTransferPayload();
     this.postTransferPayload(transferPayload);
     this.markTransferDone(transferPayload);
   }
 
   postTransferPayload(transferPayload) {
-    if (this.channel) {
-      this.channel.postMessage(transferPayload);
-    }
+    this.channel?.postMessage(transferPayload);
 
     try {
       if (window.opener && window.opener.postMessage) {
         window.opener.postMessage(transferPayload, '*');
       }
-    } catch (error) {
-      /* ignore opener fallback errors */
+    } catch {
+      // ignore opener fallback errors
     }
 
     try {
       if (window.parent && window.parent !== window && window.parent.postMessage) {
         window.parent.postMessage(transferPayload, '*');
       }
-    } catch (error) {
-      /* ignore iframe parent fallback errors */
+    } catch {
+      // ignore iframe parent fallback errors
     }
   }
 
-  openReactTargetWithAppointment(datePicker = null) {
-    this.useDatePickerValue(datePicker);
+  createTransferPayload() {
+    const selection = this.selectedEntries[0] || this.createFallbackSelection();
 
-    if (!this.normalizedSelectedDate) {
-      this.transferError = 'Bitte zuerst ein vollständiges Datum auswählen.';
-      this.transferStatus = '';
-      return;
+    if (this.isAftersales) {
+      return {
+        type: 'appointment-transfer',
+        from: 'angular-calendar-target',
+        targetApp: 'react-shell',
+        note: `Workshop slot selected: ${selection.title} on ${selection.date}`,
+        appointment: selection,
+        context: {
+          ...this.context,
+          sourceStep: 'calendar-appointment-selected',
+          appointmentDate: selection.date,
+          appointmentSlotId: selection.id,
+          workshopLocation: selection.location,
+          selectedAppointmentTitle: selection.title
+        }
+      };
     }
-
-    const transferPayload = this.createAppointmentTransferPayload({
-      targetApp: 'react-follow-up-target'
-    });
-    const serializedContext = encodeURIComponent(JSON.stringify(transferPayload.context));
-    const base = import.meta.env.BASE_URL;
-    window.open(`${window.location.origin}${base}target-react.html?context=${serializedContext}`, '_blank');
-    this.markTransferDone(transferPayload);
-  }
-
-  createAppointmentTransferPayload(overrides = {}) {
-    const appointment = this.selectedEvents[0] || {
-      date: this.normalizedSelectedDate,
-      title: this.context.journeyType === 'flight-booking' ? 'Abflugdatum' : 'Manuell gewählter Termin',
-      type: this.context.journeyType === 'flight-booking' ? 'flight-date' : 'manual'
-    };
 
     return {
       type: 'appointment-transfer',
       from: 'angular-calendar-target',
-      targetApp: 'next-scheduling-app',
-      note: `Termin übergeben: ${appointment.title} am ${appointment.date}`,
-      appointment,
+      targetApp: 'react-shell',
+      note: `Travel date selected: ${selection.date}`,
+      appointment: selection,
       context: {
         ...this.context,
-        selectedAppointmentDate: appointment.date,
-        selectedAppointmentTitle: appointment.title,
-        sourceStep: 'calendar-appointment-selected'
-      },
-      ...overrides
+        sourceStep: 'calendar-appointment-selected',
+        selectedAppointmentDate: selection.date,
+        selectedAppointmentTitle: selection.title
+      }
     };
+  }
+
+  createFallbackSelection() {
+    return this.isAftersales
+      ? {
+          id: `MANUAL-${this.normalizedSelectedDate}`,
+          date: this.normalizedSelectedDate,
+          timeLabel: 'manual',
+          title: 'Manual workshop slot',
+          location: this.context.workshopLocation || 'Berlin Alexanderplatz',
+          capacityLabel: 'manual date selection',
+          status: 'manual',
+          durationMinutes: 90
+        }
+      : {
+          id: `FLIGHT-${this.normalizedSelectedDate}`,
+          date: this.normalizedSelectedDate,
+          timeLabel: 'manual',
+          title: 'Abflugdatum',
+          location: `${this.context.origin || 'Hannover'} → ${this.context.destination || 'Barcelona'}`,
+          capacityLabel: 'manual date selection',
+          status: 'manual',
+          durationMinutes: 0
+        };
   }
 
   markTransferDone(transferPayload) {
@@ -164,8 +200,8 @@ class CalendarTargetComponent {
     this.transferPayloadJson = JSON.stringify(transferPayload, null, 2);
   }
 
-  get selectedEvents() {
-    return this.events.filter((event) => event.date === this.normalizedSelectedDate);
+  get selectedEntries() {
+    return this.entries.filter((entry) => entry.date === this.normalizedSelectedDate);
   }
 
   get normalizedSelectedDate() {
@@ -199,156 +235,142 @@ class CalendarTargetComponent {
   get selectedDateLabel() {
     return this.selectedDate || 'noch nichts gewählt';
   }
+
+  get currentSelectionTitle() {
+    return this.selectedEntries[0]?.title || (this.isAftersales ? 'Kein Werkstattslot gewählt' : 'Kein Reisedatum gewählt');
+  }
 }
 
 Component({
-  standalone: false,
   selector: 'calendar-target-root',
+  standalone: false,
   template: `
     <main class="calendar-page">
       <section class="calendar-shell">
-        <groupui-card padding="32px" class="calendar-hero">
-          <div>
-            <groupui-tag>Angular Calendar App</groupui-tag>
-            <groupui-headline heading="h1">Kalender in Angular</groupui-headline>
-            <groupui-text class="hero-lead">Eine echte, durch Vite gebündelte Angular-App zeigt einen interaktiven Kalender mit Demo-Terminen.</groupui-text>
-          </div>
-        </groupui-card>
+        <groupui-grid class="calendar-layout" gutter="24px" margin-type="custom" margin="0">
+          <groupui-grid-row>
+            <groupui-grid-col xs="12" l="6">
+              <groupui-card padding="24px" class="date-selection-card">
+                <section class="calendar-header">
+                  <div>
+                    <groupui-headline heading="h2">{{ isAftersales ? 'Datum und Slot auswählen' : 'Datum auswählen' }}</groupui-headline>
+                    <groupui-text>Gewähltes Datum: {{ selectedDateLabel }}</groupui-text>
+                    <groupui-text>Aktuelle Auswahl: {{ currentSelectionTitle }}</groupui-text>
+                  </div>
+                </section>
 
-        <groupui-card padding="24px" class="date-selection-card">
-          <section class="calendar-header">
-            <div>
-              <groupui-headline heading="h2">Datum auswählen</groupui-headline>
-              <groupui-text>Gewähltes Datum: {{ selectedDateLabel }}</groupui-text>
-            </div>
-          </section>
+                <section class="calendar-picker" aria-label="Date picker">
+                  <groupui-date-picker
+                    #travelDatePicker
+                    placeholder="Datum wählen"
+                    date-format="d.m.Y"
+                    locale="de"
+                    (onChange)="onDateChange($event)"
+                    (groupuiChange)="onDateChange($event)"
+                    (change)="onDateChange($event)"
+                    (input)="onDateChange($event)"
+                  ></groupui-date-picker>
+                  <div class="datepicker-actions">
+                    <groupui-button type="button" variant="secondary" (click)="useDatePickerValue(travelDatePicker)">
+                      Datepicker-Datum übernehmen
+                    </groupui-button>
+                  </div>
+                </section>
 
-          <section class="calendar-picker" aria-label="Date picker">
-            <groupui-date-picker
-              #travelDatePicker
-              placeholder="Datum wählen"
-              date-format="d.m.Y"
-              locale="de"
-              (onChange)="onDateChange($event)"
-              (groupuiChange)="onDateChange($event)"
-              (change)="onDateChange($event)"
-              (input)="onDateChange($event)"
-            ></groupui-date-picker>
-            <div class="datepicker-actions">
-              <groupui-button
-                type="button"
-                variant="secondary"
-                (click)="useDatePickerValue(travelDatePicker)"
-              >
-                Datepicker-Datum übernehmen
-              </groupui-button>
-            </div>
-          </section>
+                <section class="demo-date-actions" aria-label="Demo dates">
+                  <groupui-button
+                    *ngFor="let entry of entries"
+                    size="s"
+                    variant="secondary"
+                    type="button"
+                    [attr.data-slot-id]="entry.id"
+                    (click)="selectDemoDate(entry.date)"
+                  >
+                    {{ entry.date }} · {{ entry.timeLabel }} · {{ entry.title }}
+                  </groupui-button>
+                </section>
+              </groupui-card>
+            </groupui-grid-col>
 
-          <section class="demo-date-actions" aria-label="Demo dates">
-            <groupui-button
-              *ngFor="let event of events"
-              size="s"
-              variant="secondary"
-              type="button"
-              (click)="selectDemoDate(event.date)"
-            >
-              {{ event.date }} · {{ event.title }}
-            </groupui-button>
-          </section>
-        </groupui-card>
+            <groupui-grid-col xs="12" l="6">
+              <groupui-card padding="24px" class="appointment-transfer">
+                <groupui-tag>Return channel</groupui-tag>
+                <groupui-headline heading="h3">{{ isAftersales ? 'Auswahl an die Shell zurückgeben' : 'Datum an die Shell zurückgeben' }}</groupui-headline>
+                <groupui-text>
+                  {{ isAftersales
+                    ? 'Die Rückgabe erfolgt über BroadcastChannel und postMessage. Die Shell bleibt Eigentümerin des Gesamtzustands.'
+                    : 'Die Rückgabe erfolgt über BroadcastChannel und postMessage. Die React Shell entscheidet über den nächsten Schritt.' }}
+                </groupui-text>
 
-        <groupui-card padding="16px" class="calendar-summary">
-          <groupui-headline heading="h3">Ausgewählter Termin</groupui-headline>
-          <groupui-text *ngIf="selectedEvents.length">
-            <span *ngFor="let event of selectedEvents">{{ event.title }} ({{ event.type }})</span>
-          </groupui-text>
-          <groupui-text *ngIf="!selectedEvents.length">Keine Demo-Termine an diesem Tag.</groupui-text>
-        </groupui-card>
+                <div class="transfer-actions">
+                  <groupui-button id="transferSelectionButton" type="button" (click)="transferSelection(travelDatePicker)">
+                    {{ isAftersales ? 'Werkstattslot übernehmen' : 'Reisedatum übernehmen' }}
+                  </groupui-button>
+                </div>
 
-        <groupui-card padding="24px" class="appointment-transfer" aria-label="Appointment transfer">
-          <div>
-            <groupui-tag>Context Handover</groupui-tag>
-            <groupui-headline heading="h2">Termin an andere App übergeben</groupui-headline>
-            <groupui-text>
-              Der ausgewählte Termin wird zusammen mit dem Case-Kontext als strukturierter Payload
-              über BroadcastChannel und postMessage an die öffnende App geschickt.
-            </groupui-text>
-          </div>
-          <div class="transfer-actions">
-            <groupui-button
-              type="button"
-              (click)="transferSelectedAppointment(travelDatePicker)"
-            >
-              An Host zurückgeben
-            </groupui-button>
-            <groupui-button
-              type="button"
-              variant="secondary"
-              (click)="openReactTargetWithAppointment(travelDatePicker)"
-            >
-              In React App öffnen
-            </groupui-button>
-          </div>
-          <groupui-text *ngIf="!normalizedSelectedDate && !transferError" class="transfer-hint">Bitte zuerst ein vollständiges Datum auswählen.</groupui-text>
-          <groupui-text *ngIf="transferError" class="transfer-error">{{ transferError }}</groupui-text>
-          <groupui-text *ngIf="transferStatus" class="save-message">{{ transferStatus }}</groupui-text>
-          <pre *ngIf="transferred">{{ transferPayloadJson }}</pre>
-        </groupui-card>
+                <groupui-text *ngIf="transferStatus" class="save-message">{{ transferStatus }}</groupui-text>
+                <groupui-text *ngIf="transferError" class="transfer-error">{{ transferError }}</groupui-text>
+                <pre *ngIf="transferPayloadJson">{{ transferPayloadJson }}</pre>
+              </groupui-card>
+            </groupui-grid-col>
 
-        <groupui-card padding="24px" class="angular-proof" aria-label="Angular runtime proof">
-          <div>
-            <groupui-tag>Angular Runtime Proof</groupui-tag>
-            <groupui-headline heading="h2">Das ist nachweislich Angular</groupui-headline>
-            <groupui-text>
-              Diese Werte kommen direkt aus der laufenden Angular-Runtime und aus Angulars
-              Template-Binding. Der Zähler aktualisiert sich über Angular Change Detection.
-            </groupui-text>
-          </div>
+            <groupui-grid-col xs="12" l="6">
+              <groupui-card padding="24px" class="calendar-summary">
+                <groupui-tag>Context summary</groupui-tag>
+                <groupui-headline heading="h3">{{ isAftersales ? 'Aftersales context' : 'Flight context' }}</groupui-headline>
+                <div class="groupui-info-list">
+                  <div>
+                    <groupui-text weight="bold">{{ isAftersales ? 'Vehicle' : 'Route' }}</groupui-text>
+                    <groupui-text>{{ isAftersales ? context.vehicleModel : ((context.origin || 'Hannover') + ' → ' + (context.destination || 'Barcelona')) }}</groupui-text>
+                  </div>
+                  <div>
+                    <groupui-text weight="bold">{{ isAftersales ? 'Concern' : 'Passengers' }}</groupui-text>
+                    <groupui-text>{{ isAftersales ? context.serviceConcern : (context.passengers || 1) }}</groupui-text>
+                  </div>
+                  <div>
+                    <groupui-text weight="bold">Integration</groupui-text>
+                    <groupui-text>{{ context.integrationMode }}</groupui-text>
+                  </div>
+                </div>
+              </groupui-card>
+            </groupui-grid-col>
 
-          <dl class="proof-grid">
-            <groupui-card padding="14px">
-              <dt>Angular-Version</dt>
-              <dd>{{ angularVersion }}</dd>
-            </groupui-card>
-            <groupui-card padding="14px">
-              <dt>Bootstrap</dt>
-              <dd>NgModule + BrowserModule</dd>
-            </groupui-card>
-            <groupui-card padding="14px">
-              <dt>Template-Beweis</dt>
-              <dd>*ngFor, *ngIf, json pipe, Event Binding</dd>
-            </groupui-card>
-            <groupui-card padding="14px">
-              <dt>Zone Status</dt>
-              <dd>{{ zoneProof }}</dd>
-            </groupui-card>
-            <groupui-card padding="14px">
-              <dt>Change Detection</dt>
-              <dd>{{ changeDetectionTicks }} Live-Ticks</dd>
-            </groupui-card>
-          </dl>
-        </groupui-card>
-
-        <section class="context-panel linked-context-panel" aria-label="Angular context proof">
-          <div>
-            <groupui-text weight="bold">Context received</groupui-text>
-            <groupui-text>Die Angular App kann denselben Kontext wie die anderen Targets empfangen.</groupui-text>
-          </div>
-          <pre>{{ context | json }}</pre>
-        </section>
+            <groupui-grid-col xs="12" l="6">
+              <groupui-card padding="24px" class="angular-proof">
+                <groupui-tag>Runtime proof</groupui-tag>
+                <groupui-headline heading="h3">Angular 20 in production build</groupui-headline>
+                <div class="proof-grid">
+                  <groupui-card padding="16px">
+                    <dt>Angular</dt>
+                    <dd>{{ angularVersion }}</dd>
+                  </groupui-card>
+                  <groupui-card padding="16px">
+                    <dt>Zone.js</dt>
+                    <dd>{{ zoneProof }}</dd>
+                  </groupui-card>
+                  <groupui-card padding="16px">
+                    <dt>Change detection</dt>
+                    <dd>{{ changeDetectionTicks }}s</dd>
+                  </groupui-card>
+                </div>
+              </groupui-card>
+            </groupui-grid-col>
+          </groupui-grid-row>
+        </groupui-grid>
       </section>
     </main>
   `
 })(CalendarTargetComponent);
 
-class CalendarTargetModule {}
+class AppModule {}
 
 NgModule({
   declarations: [CalendarTargetComponent],
   imports: [BrowserModule],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
-  bootstrap: [CalendarTargetComponent]
-})(CalendarTargetModule);
+  bootstrap: [CalendarTargetComponent],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA]
+})(AppModule);
 
-platformBrowserDynamic().bootstrapModule(CalendarTargetModule).catch((err) => console.error(err));
+platformBrowserDynamic()
+  .bootstrapModule(AppModule)
+  .catch((error) => console.error(error));

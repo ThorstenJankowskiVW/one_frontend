@@ -2,6 +2,7 @@ import { integrationModes } from '../../context-model/src/context.js';
 
 export const primaryViews = [
   { id: 'overview', label: 'Overview' },
+  { id: 'aftersales-journey', label: 'Aftersales Journey' },
   {
     id: 'flight-booking',
     label: 'Flight Booking',
@@ -12,6 +13,8 @@ export const primaryViews = [
       { id: 'flight-booking-webcomponents', label: 'Web Components' }
     ]
   },
+  { id: 'technology-overview', label: 'Technology Overview' },
+  { id: 'implementation', label: 'Implementation' },
   { id: 'comparison', label: 'Zielbilder' },
   { id: integrationModes.linkedLaunchpad, label: 'Linked Integration' },
   { id: integrationModes.embeddedWorkspace, label: 'Embedded Workspace' },
