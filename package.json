@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test:syntax": "node --check app.js && node --check calendar-target.mjs && node --check linked-target.mjs && node --check linked-host-browser.js && node --check target-svelte.js",
+    "test:syntax": "node --check app.js && node --check calendar-target.mjs && node --check calendar-app.mjs && node --check packages/appointment-store/src/appointment-store.js && node --check linked-target.mjs && node --check linked-host-browser.js && node --check target-svelte.js",
     "test": "npm run test:syntax && npm run build",
     "test:e2e": "node tests/e2e.cjs"
   },

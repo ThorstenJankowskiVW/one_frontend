@@ -2,23 +2,38 @@ import { integrationModes } from '../../context-model/src/context.js';
 
 export const primaryViews = [
   { id: 'overview', label: 'Overview' },
-  { id: 'aftersales-journey', label: 'Aftersales Journey' },
   {
-    id: 'flight-booking',
-    label: 'Flight Booking',
+    id: 'base-apps',
+    label: 'Base Apps',
+    group: true,
     children: [
-      { id: 'flight-booking-angular', label: 'Angular Kalender' },
-      { id: 'flight-booking-svelte', label: 'Svelte Flugoptionen' },
-      { id: 'flight-booking-react-target', label: 'React Ziel-App' },
-      { id: 'flight-booking-webcomponents', label: 'Web Components' }
+      { id: 'calendar-management', label: 'Kalender (Angular)' },
+      { id: 'base-service-catalog', label: 'Service Katalog (Svelte)' },
+      { id: 'base-mobility-services', label: 'Mobilitäts-Services (Webcomponents)' }
     ]
   },
-  { id: 'technology-overview', label: 'Technology Overview' },
-  { id: 'implementation', label: 'Implementation' },
-  { id: 'comparison', label: 'Zielbilder' },
-  { id: integrationModes.linkedLaunchpad, label: 'Linked Integration' },
-  { id: integrationModes.embeddedWorkspace, label: 'Embedded Workspace' },
-  { id: integrationModes.integratedExperience, label: 'Integrated Experience' },
-  { id: 'patterns', label: 'Integrationsmuster' },
-  { id: 'debug', label: 'Architecture / Debug' }
+  {
+    id: 'integrated-journeys',
+    label: 'Integrated Journeys',
+    group: true,
+    children: [
+      { id: 'aftersales-journey', label: 'AfterSales Journey' },
+      { id: 'flight-booking', label: 'Flight Booking' }
+    ]
+  },
+  {
+    id: 'details',
+    label: 'Details',
+    group: true,
+    children: [
+      { id: 'technology-overview', label: 'Technology Overview' },
+      { id: 'implementation', label: 'Implementation' },
+      { id: 'comparison', label: 'Zielbilder' },
+      { id: integrationModes.linkedLaunchpad, label: 'Linked integration' },
+      { id: integrationModes.embeddedWorkspace, label: 'Embedded Workspace' },
+      { id: integrationModes.integratedExperience, label: 'Integrated Experience' },
+      { id: 'patterns', label: 'Integrationsmuster' },
+      { id: 'debug', label: 'Architecture/Debug' }
+    ]
+  }
 ];

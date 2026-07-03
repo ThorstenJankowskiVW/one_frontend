@@ -665,8 +665,7 @@ function isNavigationSectionActive(item) {
 
 function isTopNavigationActive(viewId) {
   if (viewId === 'flight-booking') {
-    const flightBookingView = primaryViews.find((item) => item.id === viewId);
-    return isNavigationSectionActive(flightBookingView);
+    return state.activeView === 'flight-booking' || Boolean(isolatedFlightBookingPages[state.activeView]);
   }
 
   if (viewId === 'patterns') {
@@ -981,6 +980,7 @@ function renderAftersalesJourney() {
   let focusTag = 'Step 1 · React Shell';
   let focusTitle = 'Service-Kontext prüfen';
   let focusDescription = '';
+  let summaryExtra = '';
   let focusBody = `
     <groupui-grid class="aftersales-shell-form" gutter="16px" margin-type="custom" margin="0">
       <groupui-grid-row>
@@ -1017,37 +1017,30 @@ function renderAftersalesJourney() {
   `;
 
   if (appointment && !selectedPackage) {
-    focusTag = 'Step 2 abgeschlossen · Angular';
-    focusTitle = 'Werkstattslot übernommen';
-    focusDescription = 'Die Shell hat Datum, Slot und Werkstatt aus Angular übernommen und zeigt jetzt nur noch die bisherige Auswahl plus den nächsten Schritt.';
+    summaryExtra = `
+      <groupui-tag>Step 2 abgeschlossen · Angular</groupui-tag>
+      ${renderCompactDefinitionList([
+        ['Werkstattslot', appointment.title],
+        ['Datum', appointment.date],
+        ['Werkstatt', appointment.location || state.aftersales.workshopLocation],
+        ['Dauer', `${appointment.durationMinutes || 0} min`]
+      ])}
+    `;
+    focusTag = 'Next step · Svelte';
+    focusTitle = 'Servicepaket auswählen';
+    focusDescription = 'Der nächste Dialog zeigt eine reduzierte Empfehlungsauswahl für passende Servicepakete.';
     focusBody = `
-      <div class="workflow-selection-block">
-        <groupui-tag>Bereits gewählt</groupui-tag>
-        ${renderCompactDefinitionList([
-          ['Werkstattslot', appointment.title],
-          ['Datum', appointment.date],
-          ['Werkstatt', appointment.location || state.aftersales.workshopLocation],
-          ['Dauer', `${appointment.durationMinutes || 0} min`]
-        ])}
+      <div class="workflow-preview-list">
+        ${servicePackages.slice(0, 3).map((item) => `
+          <div>
+            <strong>${escapeHtml(item.label)}</strong>
+            <span>${escapeHtml(item.summary)}</span>
+          </div>
+        `).join('')}
       </div>
-      <div class="workflow-teaser">
-        <div>
-          <groupui-tag>Next step · Svelte</groupui-tag>
-          <groupui-headline heading="h3">Servicepaket auswählen</groupui-headline>
-          <groupui-text>Der nächste Dialog zeigt eine reduzierte Empfehlungsauswahl für passende Servicepakete.</groupui-text>
-        </div>
-        <div class="workflow-preview-list">
-          ${servicePackages.slice(0, 3).map((item) => `
-            <div>
-              <strong>${escapeHtml(item.label)}</strong>
-              <span>${escapeHtml(item.summary)}</span>
-            </div>
-          `).join('')}
-        </div>
-        <div class="action-row">
-          <groupui-button type="button" data-action="open-aftersales-packages">Servicepaket auswählen</groupui-button>
-          <groupui-button variant="secondary" type="button" data-action="open-aftersales-calendar">Werkstattslot ändern</groupui-button>
-        </div>
+      <div class="action-row">
+        <groupui-button type="button" data-action="open-aftersales-packages">Servicepaket auswählen</groupui-button>
+        <groupui-button variant="secondary" type="button" data-action="open-aftersales-calendar">Werkstattslot ändern</groupui-button>
       </div>
     `;
   }
@@ -1100,7 +1093,7 @@ function renderAftersalesJourney() {
     focusBody = `
       <div class="flight-summary-header">
         <div>
-          <groupui-headline heading="h2">Service order preview / Serviceauftragsvorschau</groupui-headline>
+          <groupui-headline heading="h3">Service order preview / Serviceauftragsvorschau</groupui-headline>
           <groupui-text>React führt Angular-, Svelte- und Web-Components-Rückgaben in einer finalen Shell-Zusammenfassung zusammen.</groupui-text>
         </div>
         <div class="flight-summary-price">
@@ -1154,51 +1147,51 @@ function renderAftersalesJourney() {
     `;
   }
 
+  const focusTagClass = focusTag === 'Next step · Svelte' ? 'aftersales-pill-compact' : '';
+
   return `
     <section class="view aftersales-view">
-      <div class="view-heading">
+      ${groupuiCard(`
         <groupui-tag>React Journey / Shell Summary</groupui-tag>
-        <groupui-headline heading="h2">Volkswagen Aftersales service appointment</groupui-headline>
+        <groupui-headline heading="h3">Volkswagen Aftersales service appointment</groupui-headline>
         <groupui-text>
           Die Shell besitzt den Gesamtzustand. Jeder Schritt zeigt nur die bisherige Auswahl und teasered den nächsten
           Dialogschritt, statt mehrere Runtime-Flächen parallel offen zu halten. Die Shell startet den Prozess,
           hält Fahrzeug- und Servicekontext und teasered den nächsten Runtime-Schritt als klaren Dialog-Call-to-Action an.
         </groupui-text>
-      </div>
+      `, 'aftersales-header-card')}
 
-      <section class="flight-stepper aftersales-stepper" aria-label="Aftersales journey steps">
-        <groupui-stepper-horizontal>
-          ${aftersalesSteps.map((item) => `
-            <groupui-step
-              data-aftersales-step="${item.step}"
-              ${item.step === state.aftersales.currentStep ? 'active=""' : ''}
-            >${item.title}</groupui-step>
-          `).join('')}
-        </groupui-stepper-horizontal>
-        <div class="flight-step-technologies" aria-label="Frontend technologies per step">
-          ${aftersalesSteps.map((item) => `
-            <span class="${item.step === state.aftersales.currentStep ? 'is-current' : ''}">
-              ${item.app}
-            </span>
-          `).join('')}
-        </div>
-      </section>
+      ${groupuiCard(`
+        <section class="flight-stepper aftersales-stepper" aria-label="Aftersales journey steps">
+          <groupui-stepper-horizontal>
+            ${aftersalesSteps.map((item) => `
+              <groupui-step
+                data-aftersales-step="${item.step}"
+                ${item.step === state.aftersales.currentStep ? 'active=""' : ''}
+              >${item.title}</groupui-step>
+            `).join('')}
+          </groupui-stepper-horizontal>
+          <div class="flight-step-technologies" aria-label="Frontend technologies per step">
+            ${aftersalesSteps.map((item) => `
+              <span class="${item.step === state.aftersales.currentStep ? 'is-current' : ''}">
+                ${item.app}
+              </span>
+            `).join('')}
+          </div>
+        </section>
+      `, 'aftersales-stepper-card')}
+
 
       ${isInitialAftersalesStep ? `
         <div class="aftersales-workflow-layout aftersales-step1-layout">
-          <div class="aftersales-workflow-main aftersales-step1-main">
-            ${groupuiCard(`
-              <groupui-tag>${focusTag}</groupui-tag>
-              <groupui-headline heading="h2">${focusTitle}</groupui-headline>
+          ${groupuiCard(`
+              <groupui-tag class="${focusTagClass}">${focusTag}</groupui-tag>
+              <groupui-headline heading="h3">${focusTitle}</groupui-headline>
               ${focusDescription ? `<groupui-text>${focusDescription}</groupui-text>` : ''}
               ${focusBody}
             `, 'aftersales-focus-card')}
-            ${groupuiCard(renderContextAccordion(context), 'aftersales-accordion-card')}
-          </div>
-
-          <aside class="aftersales-workflow-side aftersales-step1-side">
             ${groupuiCard(`
-              <groupui-tag>Customer data</groupui-tag>
+              <groupui-tag size="s" class="aftersales-pill-nowrap">Customer data</groupui-tag>
               <groupui-headline heading="h3">Kundendaten</groupui-headline>
               ${renderCompactDefinitionList([
                 ['Name', demoCase.customer],
@@ -1208,32 +1201,18 @@ function renderAftersalesJourney() {
                 ['Language', state.activeContext.language]
               ])}
             `, 'aftersales-summary-card')}
-
-            ${groupuiCard(`
-              <groupui-tag>Shell summary</groupui-tag>
-              <groupui-headline heading="h3">Auftragsübersicht</groupui-headline>
-              ${renderWorkflowStatusList(workflowStatus)}
-              <div class="summary-price-panel">
-                <span>Estimated order value</span>
-                <strong>0 EUR</strong>
-              </div>
-            `, 'aftersales-summary-card')}
-          </aside>
+          ${groupuiCard(renderContextAccordion(context), 'aftersales-accordion-card')}
         </div>
       ` : `
         <div class="aftersales-workflow-layout">
-          <div class="aftersales-workflow-main">
-            ${groupuiCard(`
-              <groupui-tag>${focusTag}</groupui-tag>
-              <groupui-headline heading="h2">${focusTitle}</groupui-headline>
+          ${groupuiCard(`
+              <groupui-tag class="${focusTagClass}">${focusTag}</groupui-tag>
+              <groupui-headline heading="h3">${focusTitle}</groupui-headline>
               <groupui-text>${focusDescription}</groupui-text>
               ${focusBody}
             `, 'aftersales-focus-card')}
-            ${groupuiCard(renderContextAccordion(context), 'aftersales-accordion-card')}
-          </div>
-
-          <aside class="aftersales-workflow-side">
-            ${groupuiCard(`
+          ${groupuiCard(`
+              ${summaryExtra}
               <groupui-tag>Shell summary</groupui-tag>
               <groupui-headline heading="h3">Bisheriger Stand</groupui-headline>
               ${renderWorkflowStatusList(workflowStatus)}
@@ -1248,7 +1227,7 @@ function renderAftersalesJourney() {
                 ['Language', state.activeContext.language]
               ])}
             `, 'aftersales-summary-card')}
-          </aside>
+          ${groupuiCard(renderContextAccordion(context), 'aftersales-accordion-card')}
         </div>
       `}
     </section>
@@ -1622,6 +1601,65 @@ function renderFlightBooking() {
   `;
 }
 
+function renderBaseAppPlaceholder(pageId) {
+  const pages = {
+    'base-service-catalog': {
+      eyebrow: 'Svelte · Base App',
+      title: 'Service Katalog',
+      technology: 'Svelte Remote',
+      description: 'Eigenständige Base App für den Servicekatalog. Inhalt folgt.'
+    },
+    'base-mobility-services': {
+      eyebrow: 'Web Components · Base App',
+      title: 'Mobilitäts-Services',
+      technology: 'Native Web Component',
+      description: 'Eigenständige Base App für Mobilitäts- und Zusatzservices. Inhalt folgt.'
+    }
+  };
+  const page = pages[pageId] || pages['base-service-catalog'];
+
+  return `
+    <section class="view base-app-placeholder-page">
+      <div class="view-heading">
+        <groupui-tag>${page.eyebrow}</groupui-tag>
+        <groupui-headline heading="h2">${page.title}</groupui-headline>
+        <groupui-text>${page.description}</groupui-text>
+      </div>
+      ${groupuiCard(`
+        <groupui-tag>${page.technology}</groupui-tag>
+        <groupui-headline heading="h3">Content to be done</groupui-headline>
+        <groupui-text>Diese Base App ist als eigenständiger Baustein angelegt. Die fachliche Ausgestaltung folgt in einem späteren Schritt.</groupui-text>
+      `, 'base-app-placeholder-card')}
+    </section>
+  `;
+}
+
+function renderCalendarManagement() {
+  const base = import.meta.env.BASE_URL;
+  const url = `${base}calendar-app.html?v=calendar-crud-1`;
+
+  return `
+    <section class="view calendar-management-page">
+      <div class="view-heading">
+        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 16px;">
+          <groupui-tag>Angular · Werkstatt-Kalender</groupui-tag>
+          <groupui-tag>Eingebettete Angular-App</groupui-tag>
+        </div>
+        <groupui-headline heading="h2">Kalenderverwaltung / Manage appointments</groupui-headline>
+        <groupui-text>
+          Die Angular-Kalender-App verwaltet alle Werkstatttermine (anlegen, ändern, löschen).
+          Die Daten werden lokal als JSON im Browser gespeichert und stehen dem Datepicker der
+          Aftersales-Journey direkt zur Verfügung. Die React Shell bleibt Rahmen und Navigation. Der Kalender läuft als echte Angular-App im iframe
+          und teilt seinen Datenbestand über den gemeinsamen Termin-Store.
+        </groupui-text>
+      </div>
+      ${groupuiCard(`
+        <iframe class="calendar-management-frame" title="Angular Werkstatt-Kalender" src="${url}"></iframe>
+      `, 'calendar-management-card')}
+    </section>
+  `;
+}
+
 function renderIsolatedFlightBookingPage(pageId) {
   const page = isolatedFlightBookingPages[pageId];
   if (!page) return renderFlightBooking();
@@ -1914,6 +1952,9 @@ function renderModal() {
 
 function renderActiveView() {
   if (state.activeView === 'aftersales-journey') return renderAftersalesJourney();
+  if (state.activeView === 'calendar-management') return renderCalendarManagement();
+  if (state.activeView === 'base-service-catalog') return renderBaseAppPlaceholder('base-service-catalog');
+  if (state.activeView === 'base-mobility-services') return renderBaseAppPlaceholder('base-mobility-services');
   if (state.activeView === 'comparison') return renderComparison();
   if (state.activeView === 'technology-overview') return renderTechnologyOverview();
   if (state.activeView === 'implementation') return renderImplementation();
@@ -2173,7 +2214,11 @@ document.addEventListener('click', (event) => {
   }
 
   if (navTarget) {
-    const targetView = navTarget.dataset.nav;
+    let targetView = navTarget.dataset.nav;
+    const groupDefinition = primaryViews.find((item) => item.id === targetView && item.children);
+    if (groupDefinition) {
+      targetView = groupDefinition.children[0].id;
+    }
     if (targetView === 'aftersales-journey') {
       navigate(targetView, createAftersalesContext({ sourceStep: 'shell-nav', integrationMode: integrationModes.navigation }));
       return;
@@ -2188,7 +2233,7 @@ document.addEventListener('click', (event) => {
   }
 });
 
-function handleFlightFieldChange(event) {
+function handleFlightFieldChange(event, shouldRender = true) {
   const field = getDataFieldElement(event, 'flightField');
   if (!field) return;
 
@@ -2204,10 +2249,10 @@ function handleFlightFieldChange(event) {
   };
   state.activeContext = createFlightBookingContext();
   recordEvent(state.eventLog, 'flight-booking-update', { field: key, value });
-  render();
+  if (shouldRender) render();
 }
 
-function handleAftersalesFieldChange(event) {
+function handleAftersalesFieldChange(event, shouldRender = true) {
   const field = getDataFieldElement(event, 'aftersalesField');
   if (!field) return;
 
@@ -2226,7 +2271,7 @@ function handleAftersalesFieldChange(event) {
     [key]: value
   });
   recordEvent(state.eventLog, 'aftersales-context-update', { field: key, value });
-  render();
+  if (shouldRender) render();
 }
 
 function getDataFieldElement(event, datasetKey) {
@@ -2248,8 +2293,10 @@ document.addEventListener('change', (event) => {
 });
 
 document.addEventListener('input', (event) => {
-  handleFlightFieldChange(event);
-  handleAftersalesFieldChange(event);
+  // Nur State aktualisieren, kein render() – verhindert Flackern/Cursor-Reset bei Texteingabe.
+  // render() erfolgt beim 'change'- bzw. 'groupuiChange'-Event (Feld verlassen / Wert bestätigt).
+  handleFlightFieldChange(event, false);
+  handleAftersalesFieldChange(event, false);
 });
 
 document.addEventListener('groupuiChange', (event) => {
