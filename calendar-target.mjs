@@ -6,7 +6,12 @@ import '@angular/compiler';
 import { BrowserModule } from '@angular/platform-browser';
 import { Component, CUSTOM_ELEMENTS_SCHEMA, NgModule, VERSION } from '@angular/core';
 import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
-import { workshopAppointments } from './packages/demo-data/src/cases.js';
+import {
+  getFreeSlotsForDate,
+  listAppointments,
+  onChange,
+  syncFromServer
+} from './packages/appointment-store/src/appointment-store.js';
 import { readLinkedContextFromUrl } from './linked-context.js';
 
 defineCustomElements().catch((error) => {
@@ -28,8 +33,11 @@ class CalendarTargetComponent {
   transferError = '';
   transferPayloadJson = '';
   channel = null;
+  selectedSlotId = '';
+  storeUnsubscribe = null;
+  angularZone = null;
   entries = this.isAftersales
-    ? workshopAppointments
+    ? listAppointments()
     : [
         {
           id: 'FLIGHT-2026-06-18',
@@ -66,24 +74,68 @@ class CalendarTargetComponent {
     this.intervalId = setInterval(() => {
       this.changeDetectionTicks += 1;
     }, 1000);
+
+    if (this.isAftersales) {
+      this.angularZone = typeof Zone !== 'undefined' ? Zone.current : null;
+
+      const refresh = () => {
+        this.entries = listAppointments();
+      };
+
+      const zoneRefresh = () => {
+        if (this.angularZone) {
+          this.angularZone.run(refresh);
+        } else {
+          refresh();
+        }
+      };
+
+      // Sofortiger synchroner Refresh – stellt sicher dass entries nie leer bleiben,
+      // auch wenn localStorage beim Konstruktor-Aufruf noch leer war.
+      zoneRefresh();
+
+      this.storeUnsubscribe = onChange(zoneRefresh);
+
+      // Async: dauerhaft gespeicherte Termine vom Server holen.
+      // Nach dem Fetch (egal ob loaded oder nicht) nochmal refreshen.
+      syncFromServer().then(() => {
+        zoneRefresh();
+      });
+    }
   }
 
   ngOnDestroy() {
     if (this.intervalId) {
       clearInterval(this.intervalId);
     }
+    if (this.storeUnsubscribe) {
+      this.storeUnsubscribe();
+    }
   }
 
   onDateChange(event) {
     this.selectedDate = event.target.value || event.detail?.value || event.detail || '';
+    this.selectedSlotId = '';
   }
 
   selectDemoDate(date) {
     this.selectedDate = date;
+    this.selectedSlotId = '';
     const picker = document.querySelector('groupui-date-picker');
     if (picker) {
       picker.value = date;
       picker.setAttribute('value', date);
+    }
+  }
+
+  selectSlot(slot) {
+    this.selectedDate = slot.date;
+    this.selectedSlotId = slot.id;
+    this.transferError = '';
+    const picker = document.querySelector('groupui-date-picker');
+    if (picker) {
+      picker.value = slot.date;
+      picker.setAttribute('value', slot.date);
     }
   }
 
@@ -134,7 +186,7 @@ class CalendarTargetComponent {
   }
 
   createTransferPayload() {
-    const selection = this.selectedEntries[0] || this.createFallbackSelection();
+    const selection = this.chosenSlot || this.createFallbackSelection();
 
     if (this.isAftersales) {
       return {
@@ -204,6 +256,27 @@ class CalendarTargetComponent {
     return this.entries.filter((entry) => entry.date === this.normalizedSelectedDate);
   }
 
+  get availableSlots() {
+    if (!this.isAftersales || !this.normalizedSelectedDate) {
+      return [];
+    }
+    return getFreeSlotsForDate(this.normalizedSelectedDate);
+  }
+
+  get chosenSlot() {
+    if (this.selectedSlotId) {
+      const match = this.entries.find((entry) => entry.id === this.selectedSlotId);
+      if (match) {
+        return match;
+      }
+    }
+    return this.selectedEntries[0] || null;
+  }
+
+  get hasSlotsForDate() {
+    return this.availableSlots.length > 0;
+  }
+
   get normalizedSelectedDate() {
     const value = this.coerceDateValue(this.selectedDate);
     const germanDate = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(value);
@@ -237,7 +310,7 @@ class CalendarTargetComponent {
   }
 
   get currentSelectionTitle() {
-    return this.selectedEntries[0]?.title || (this.isAftersales ? 'Kein Werkstattslot gewählt' : 'Kein Reisedatum gewählt');
+    return this.chosenSlot?.title || (this.isAftersales ? 'Kein Werkstattslot gewählt' : 'Kein Reisedatum gewählt');
   }
 }
 
@@ -288,6 +361,28 @@ Component({
                   >
                     {{ entry.date }} · {{ entry.timeLabel }} · {{ entry.title }}
                   </groupui-button>
+                </section>
+
+                <section class="available-slots" *ngIf="isAftersales && normalizedSelectedDate" aria-label="Verfügbare Slots">
+                  <groupui-divider></groupui-divider>
+                  <groupui-text weight="bold">Freie Werkstattslots am {{ selectedDateLabel }}</groupui-text>
+                  <groupui-text *ngIf="!hasSlotsForDate" class="transfer-hint">
+                    Keine freien Slots aus dem Kalender an diesem Tag. Bitte anderes Datum wählen.
+                  </groupui-text>
+                  <div class="slot-option-list">
+                    <button
+                      type="button"
+                      class="slot-option"
+                      [class.is-selected]="slot.id === selectedSlotId"
+                      *ngFor="let slot of availableSlots"
+                      [attr.data-slot-id]="slot.id"
+                      (click)="selectSlot(slot)"
+                    >
+                      <span class="slot-option-time">{{ slot.timeLabel }}</span>
+                      <span class="slot-option-title">{{ slot.title }}</span>
+                      <span class="slot-option-meta">{{ slot.location }} · {{ slot.durationMinutes }} min</span>
+                    </button>
+                  </div>
                 </section>
               </groupui-card>
             </groupui-grid-col>

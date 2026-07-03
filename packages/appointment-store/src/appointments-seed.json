@@ -1,0 +1,89 @@
+{
+  "version": "onefe-appointments-v1",
+  "appointments": [
+    {
+      "id": "BER-2026-06-08-AM",
+      "date": "2026-06-08",
+      "timeLabel": "08:30",
+      "title": "Inspektion ID.7",
+      "location": "Berlin Alexanderplatz",
+      "capacity": 3,
+      "bookedCount": 3,
+      "status": "booked",
+      "durationMinutes": 95,
+      "notes": "Voll belegt"
+    },
+    {
+      "id": "BER-2026-06-11-AM",
+      "date": "2026-06-11",
+      "timeLabel": "09:00",
+      "title": "Bremsen-Service",
+      "location": "Berlin Alexanderplatz",
+      "capacity": 2,
+      "bookedCount": 1,
+      "status": "available",
+      "durationMinutes": 110,
+      "notes": ""
+    },
+    {
+      "id": "BER-2026-06-18-AM",
+      "date": "2026-06-18",
+      "timeLabel": "08:30",
+      "title": "Service-Termin",
+      "location": "Berlin Alexanderplatz",
+      "capacity": 3,
+      "bookedCount": 0,
+      "status": "recommended",
+      "durationMinutes": 95,
+      "notes": "Empfohlener Slot"
+    },
+    {
+      "id": "BER-2026-06-18-PM",
+      "date": "2026-06-18",
+      "timeLabel": "13:45",
+      "title": "Express-Inspektion",
+      "location": "Berlin Alexanderplatz",
+      "capacity": 2,
+      "bookedCount": 1,
+      "status": "limited",
+      "durationMinutes": 75,
+      "notes": ""
+    },
+    {
+      "id": "MUC-2026-06-22-AM",
+      "date": "2026-06-22",
+      "timeLabel": "10:30",
+      "title": "Software-Update",
+      "location": "München Schwabing",
+      "capacity": 2,
+      "bookedCount": 0,
+      "status": "available",
+      "durationMinutes": 80,
+      "notes": ""
+    },
+    {
+      "id": "BER-2026-06-24-AM",
+      "date": "2026-06-24",
+      "timeLabel": "09:15",
+      "title": "Werkstatt-Review",
+      "location": "Berlin Alexanderplatz",
+      "capacity": 2,
+      "bookedCount": 0,
+      "status": "available",
+      "durationMinutes": 110,
+      "notes": ""
+    },
+    {
+      "id": "BER-2026-06-29-PM",
+      "date": "2026-06-29",
+      "timeLabel": "14:00",
+      "title": "Reifenwechsel",
+      "location": "Berlin Alexanderplatz",
+      "capacity": 4,
+      "bookedCount": 2,
+      "status": "available",
+      "durationMinutes": 60,
+      "notes": ""
+    }
+  ]
+}

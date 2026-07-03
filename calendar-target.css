@@ -51,6 +51,66 @@ body {
   gap: 8px;
 }
 
+.available-slots {
+  margin-top: 20px;
+}
+
+.available-slots groupui-text {
+  display: block;
+  margin: 12px 0 8px;
+}
+
+.slot-option-list {
+  display: grid;
+  gap: 10px;
+}
+
+.slot-option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "time title"
+    "time meta";
+  column-gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--onefe-border, #e2e8f0);
+  border-radius: 8px;
+  background: var(--onefe-surface, #ffffff);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.slot-option:hover {
+  border-color: #7d3fd6;
+}
+
+.slot-option.is-selected {
+  border-color: #7d3fd6;
+  box-shadow: 0 0 0 1px #7d3fd6 inset;
+  background: #f5f0ff;
+}
+
+.slot-option-time {
+  grid-area: time;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.slot-option-title {
+  grid-area: title;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.slot-option-meta {
+  grid-area: meta;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
 .appointment-transfer groupui-text {
   max-width: 760px;
 }

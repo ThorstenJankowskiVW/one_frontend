@@ -349,33 +349,20 @@ main > .view:first-child {
   align-items: start;
 }
 
-.aftersales-step1-layout {
-  display: grid;
-  grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
-  gap: 24px;
-  align-items: start;
-}
-
-.aftersales-step1-side,
-.aftersales-step1-main,
-.aftersales-step1-accordion {
-  display: grid;
-  gap: 18px;
-}
-
-.aftersales-step1-accordion {
-  grid-column: 1 / -1;
-}
-
+.aftersales-step1-layout,
 .aftersales-workflow-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.18fr) minmax(300px, 0.82fr);
+  grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr);
   gap: 24px;
-  align-items: start;
+  align-items: stretch;
 }
 
-.aftersales-workflow-main,
-.aftersales-workflow-side,
+.aftersales-step1-layout > .aftersales-accordion-card,
+.aftersales-workflow-layout > .aftersales-accordion-card {
+  grid-column: 1 / -1;
+  align-self: start;
+}
+
 .aftersales-focus-card,
 .aftersales-summary-card,
 .workflow-selection-grid,
@@ -384,9 +371,26 @@ main > .view:first-child {
   gap: 18px;
 }
 
-.aftersales-workflow-side {
-  position: sticky;
-  top: 96px;
+.aftersales-pill-nowrap {
+  white-space: nowrap;
+  width: fit-content;
+  justify-self: start;
+  margin-bottom: 6px;
+  height: 22px;
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.aftersales-pill-compact {
+  white-space: nowrap;
+  width: fit-content;
+  justify-self: start;
+  margin-bottom: 6px;
+  height: 22px;
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .aftersales-shell-form {
@@ -691,6 +695,20 @@ main > .view:first-child {
   border: var(--groupui-sys-border-width-s) solid var(--groupui-sys-color-line-weak);
   border-radius: var(--groupui-sys-border-radius-s);
   background: var(--groupui-sys-color-background-base);
+}
+
+.calendar-management-card {
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.calendar-management-frame {
+  width: 100%;
+  min-height: 900px;
+  border: none;
+  border-radius: 0;
+  background: var(--groupui-sys-color-background-base);
+  display: block;
 }
 
 .flight-form-card {
