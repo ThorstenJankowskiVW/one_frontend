@@ -113,7 +113,7 @@
 </script>
 
 <main class="svelte-flight-root">
-  <groupui-card padding="24px">
+  <groupui-card padding="16px">
     <groupui-tag>Svelte Target</groupui-tag>
     <groupui-headline heading="h1">
       {isAftersales ? 'Servicepaket auswählen' : 'Flugoption auswählen'}
@@ -129,7 +129,7 @@
     </groupui-text>
   </groupui-card>
 
-  <groupui-card padding="24px" class="svelte-option-panel">
+  <groupui-card padding="16px" class="svelte-option-panel">
     <groupui-headline heading="h2">
       {isAftersales ? 'Verfügbare Servicepakete' : 'Verfügbare Flugoptionen'}
     </groupui-headline>
@@ -158,16 +158,17 @@
     </fieldset>
 
     <div class="action-row right">
-      <button class="svelte-submit" type="button" on:click={submitOption}>
+      <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+      <groupui-button type="button" on:click={submitOption}>
         {isAftersales ? 'Servicepaket übernehmen' : 'Ausgewählte Flugoption übernehmen'}
-      </button>
+      </groupui-button>
     </div>
     {#if transferStatus}
       <groupui-text class="save-message">{transferStatus}</groupui-text>
     {/if}
   </groupui-card>
 
-  <groupui-card padding="20px" class="selected-summary">
+  <groupui-card padding="16px" class="selected-summary">
     <groupui-tag>Aktuelle Auswahl</groupui-tag>
     <groupui-headline heading="h3">{selectedOption.label}</groupui-headline>
     <groupui-text>
@@ -180,7 +181,7 @@
     </groupui-text>
   </groupui-card>
 
-  <groupui-card padding="20px" class="svelte-proof">
+  <groupui-card padding="16px" class="svelte-proof">
     <groupui-tag>Runtime Proof</groupui-tag>
     <groupui-headline heading="h3">Echte Svelte-Komponente</groupui-headline>
     <groupui-text>
@@ -193,22 +194,22 @@
 <style>
   .svelte-flight-root {
     display: grid;
-    gap: 20px;
+    gap: 12px;
     max-width: 980px;
     margin: 0 auto;
-    padding: 24px;
+    padding: 16px;
   }
 
   .svelte-option-panel,
   .selected-summary,
   .svelte-proof {
     display: grid;
-    gap: 18px;
+    gap: 12px;
   }
 
   .flight-options {
     display: grid;
-    gap: 12px;
+    gap: 8px;
     margin: 0;
     padding: 0;
     border: 0;
@@ -227,7 +228,7 @@
     grid-template-columns: auto 1fr auto;
     align-items: center;
     gap: 16px;
-    padding: 16px;
+    padding: 12px 16px;
     border: 1px solid var(--groupui-sys-color-line-weak);
     border-radius: var(--groupui-sys-border-radius-s);
     background: var(--groupui-sys-color-background-base);
@@ -248,18 +249,6 @@
     color: var(--groupui-sys-color-text-weaker);
   }
 
-  .svelte-submit {
-    min-height: 44px;
-    padding: 0 20px;
-    border: 0;
-    border-radius: var(--groupui-sys-border-radius-s);
-    color: var(--groupui-sys-color-text-inverted);
-    background: var(--groupui-sys-color-action-basic-default);
-    font: inherit;
-    font-weight: 700;
-    cursor: pointer;
-  }
-
   @media (max-width: 600px) {
     .svelte-flight-root {
       gap: 12px;
@@ -275,7 +264,7 @@
       grid-column: 2;
     }
 
-    .svelte-submit {
+    .action-row.right groupui-button {
       width: 100%;
     }
   }

@@ -270,15 +270,15 @@
             });
           });
 
-          this.querySelector('#mobilitySelect')?.addEventListener('change', (event) => {
+          this.querySelector('#mobilitySelect')?.addEventListener('groupuiChange', (event) => {
             this.updateState({ mobilityNeed: event.target.value });
           });
 
-          this.querySelector('#partsStatusSelect')?.addEventListener('change', (event) => {
+          this.querySelector('#partsStatusSelect')?.addEventListener('groupuiChange', (event) => {
             this.updateState({ partsStatus: event.target.value });
           });
 
-          this.querySelector('#campaignStatusSelect')?.addEventListener('change', (event) => {
+          this.querySelector('#campaignStatusSelect')?.addEventListener('groupuiChange', (event) => {
             this.updateState({ campaignStatus: event.target.value });
           });
 
@@ -286,11 +286,11 @@
             this.updateState({ followUpRequired: event.target.checked });
           });
         } else {
-          this.querySelector('#seatSelect')?.addEventListener('change', (event) => {
+          this.querySelector('#seatSelect')?.addEventListener('groupuiChange', (event) => {
             this.updateState({ seat: event.target.value });
           });
 
-          this.querySelector('#baggageSelect')?.addEventListener('change', (event) => {
+          this.querySelector('#baggageSelect')?.addEventListener('groupuiChange', (event) => {
             this.updateState({ baggage: event.target.value });
           });
 
@@ -338,31 +338,25 @@
               </fieldset>
 
               <div class="extras-grid">
-                <label class="extras-field">
-                  <span>Mobility need</span>
-                  <select id="mobilitySelect">
-                    <option value="none" ${this.state.mobilityNeed === 'none' ? 'selected' : ''}>No mobility support</option>
-                    <option value="shuttle" ${this.state.mobilityNeed === 'shuttle' ? 'selected' : ''}>Shuttle service</option>
-                    <option value="replacement-vehicle" ${this.state.mobilityNeed === 'replacement-vehicle' ? 'selected' : ''}>Replacement vehicle</option>
-                  </select>
-                </label>
+                <groupui-select id="mobilitySelect" value="${this.state.mobilityNeed}">
+                  <span slot="label">Mobility need</span>
+                  <groupui-select-option value="none">No mobility support</groupui-select-option>
+                  <groupui-select-option value="shuttle">Shuttle service</groupui-select-option>
+                  <groupui-select-option value="replacement-vehicle">Replacement vehicle</groupui-select-option>
+                </groupui-select>
 
-                <label class="extras-field">
-                  <span>Parts status</span>
-                  <select id="partsStatusSelect">
-                    <option value="check-pending" ${this.state.partsStatus === 'check-pending' ? 'selected' : ''}>Check pending</option>
-                    <option value="available" ${this.state.partsStatus === 'available' ? 'selected' : ''}>Available</option>
-                    <option value="ordered" ${this.state.partsStatus === 'ordered' ? 'selected' : ''}>Ordered</option>
-                  </select>
-                </label>
+                <groupui-select id="partsStatusSelect" value="${this.state.partsStatus}">
+                  <span slot="label">Parts status</span>
+                  <groupui-select-option value="check-pending">Check pending</groupui-select-option>
+                  <groupui-select-option value="available">Available</groupui-select-option>
+                  <groupui-select-option value="ordered">Ordered</groupui-select-option>
+                </groupui-select>
 
-                <label class="extras-field">
-                  <span>Campaign status</span>
-                  <select id="campaignStatusSelect">
-                    <option value="no-active-campaign" ${this.state.campaignStatus === 'no-active-campaign' ? 'selected' : ''}>No active campaign</option>
-                    <option value="campaign-found" ${this.state.campaignStatus === 'campaign-found' ? 'selected' : ''}>Campaign found</option>
-                  </select>
-                </label>
+                <groupui-select id="campaignStatusSelect" value="${this.state.campaignStatus}">
+                  <span slot="label">Campaign status</span>
+                  <groupui-select-option value="no-active-campaign">No active campaign</groupui-select-option>
+                  <groupui-select-option value="campaign-found">Campaign found</groupui-select-option>
+                </groupui-select>
 
                 <label class="extras-field">
                   <span>Follow-up</span>
@@ -401,23 +395,19 @@
               <groupui-text>Dieses Custom Element hält eigenen State und sendet die ausgewählten Extras als strukturierten Payload zurück.</groupui-text>
 
               <div class="extras-grid">
-                <label class="extras-field">
-                  <span>Sitzplatz</span>
-                  <select id="seatSelect">
-                    <option value="standard" ${this.state.seat === 'standard' ? 'selected' : ''}>Standardplatz · 0 EUR</option>
-                    <option value="window" ${this.state.seat === 'window' ? 'selected' : ''}>Fensterplatz · 18 EUR</option>
-                    <option value="extraLegroom" ${this.state.seat === 'extraLegroom' ? 'selected' : ''}>Extra Beinfreiheit · 42 EUR</option>
-                  </select>
-                </label>
+                <groupui-select id="seatSelect" value="${this.state.seat}">
+                  <span slot="label">Sitzplatz</span>
+                  <groupui-select-option value="standard">Standardplatz · 0 EUR</groupui-select-option>
+                  <groupui-select-option value="window">Fensterplatz · 18 EUR</groupui-select-option>
+                  <groupui-select-option value="extraLegroom">Extra Beinfreiheit · 42 EUR</groupui-select-option>
+                </groupui-select>
 
-                <label class="extras-field">
-                  <span>Gepäck</span>
-                  <select id="baggageSelect">
-                    <option value="cabin" ${this.state.baggage === 'cabin' ? 'selected' : ''}>Nur Handgepäck · 0 EUR</option>
-                    <option value="checked" ${this.state.baggage === 'checked' ? 'selected' : ''}>Aufgabegepäck 23 kg · 35 EUR</option>
-                    <option value="sports" ${this.state.baggage === 'sports' ? 'selected' : ''}>Sportgepäck · 65 EUR</option>
-                  </select>
-                </label>
+                <groupui-select id="baggageSelect" value="${this.state.baggage}">
+                  <span slot="label">Gepäck</span>
+                  <groupui-select-option value="cabin">Nur Handgepäck · 0 EUR</groupui-select-option>
+                  <groupui-select-option value="checked">Aufgabegepäck 23 kg · 35 EUR</groupui-select-option>
+                  <groupui-select-option value="sports">Sportgepäck · 65 EUR</groupui-select-option>
+                </groupui-select>
               </div>
 
               <fieldset class="extras-checks">

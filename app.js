@@ -976,10 +976,12 @@ function renderAftersalesJourney() {
     }
   ];
   const isInitialAftersalesStep = !appointment && !selectedPackage && !serviceExtras;
+  const editingContext = Boolean(state.aftersales.editContext);
 
   let focusTag = 'Step 1 · React Shell';
   let focusTitle = 'Service-Kontext prüfen';
   let focusDescription = '';
+  let focusPrimaryAction = '';
   let summaryExtra = '';
   let focusBody = `
     <groupui-grid class="aftersales-shell-form" gutter="16px" margin-type="custom" margin="0">
@@ -1010,13 +1012,20 @@ function renderAftersalesJourney() {
     </groupui-grid>
     <div class="workflow-next-step-inline">
       <div class="action-row right">
-        <groupui-button variant="secondary" type="button" data-action="reset-aftersales">Journey zurücksetzen</groupui-button>
-        <groupui-button type="button" data-action="open-aftersales-calendar">Werkstattslot auswählen</groupui-button>
+        ${editingContext
+          ? `<groupui-button type="button" data-action="finish-aftersales-context-edit">Zurück zur Übersicht</groupui-button>`
+          : `<groupui-button variant="secondary" type="button" data-action="reset-aftersales">Journey zurücksetzen</groupui-button>
+        <groupui-button type="button" data-action="open-aftersales-calendar">Werkstattslot auswählen</groupui-button>`}
       </div>
     </div>
   `;
 
-  if (appointment && !selectedPackage) {
+  if (editingContext) {
+    focusTitle = 'Service-Kontext ändern';
+    focusDescription = 'Passe Kunden- und Servicekontext an und kehre anschließend zur Übersicht zurück.';
+  }
+
+  if (!editingContext && appointment && !selectedPackage) {
     summaryExtra = `
       <groupui-tag>Step 2 abgeschlossen · Angular</groupui-tag>
       ${renderCompactDefinitionList([
@@ -1029,6 +1038,11 @@ function renderAftersalesJourney() {
     focusTag = 'Next step · Svelte';
     focusTitle = 'Servicepaket auswählen';
     focusDescription = 'Der nächste Dialog zeigt eine reduzierte Empfehlungsauswahl für passende Servicepakete.';
+    focusPrimaryAction = `
+      <div class="action-row">
+        <groupui-button type="button" data-action="open-aftersales-packages">Jetzt auswählen</groupui-button>
+      </div>
+    `;
     focusBody = `
       <div class="workflow-preview-list">
         ${servicePackages.slice(0, 3).map((item) => `
@@ -1039,13 +1053,12 @@ function renderAftersalesJourney() {
         `).join('')}
       </div>
       <div class="action-row">
-        <groupui-button type="button" data-action="open-aftersales-packages">Servicepaket auswählen</groupui-button>
         <groupui-button variant="secondary" type="button" data-action="open-aftersales-calendar">Werkstattslot ändern</groupui-button>
       </div>
     `;
   }
 
-  if (selectedPackage && !serviceExtras) {
+  if (!editingContext && selectedPackage && !serviceExtras) {
     focusTag = 'Step 3 abgeschlossen · Svelte';
     focusTitle = 'Servicepaket übernommen';
     focusDescription = 'Paket, Dauer und Grundpreis liegen jetzt in der Shell. Als letzter Eingabeschritt folgt eine fokussierte Extras- und Mobilitätsauswahl im Dialog.';
@@ -1086,7 +1099,7 @@ function renderAftersalesJourney() {
     `;
   }
 
-  if (selectedPackage && serviceExtras) {
+  if (!editingContext && selectedPackage && serviceExtras) {
     focusTag = 'Step 4 abgeschlossen · Web Components';
     focusTitle = 'Service order preview / Serviceauftragsvorschau';
     focusDescription = 'Alle Runtime-Beiträge sind übernommen. Die Shell zeigt nur noch die verdichtete Ergebnisansicht und hält den gesamten Verlauf nachvollziehbar.';
@@ -1110,6 +1123,9 @@ function renderAftersalesJourney() {
             ['Vehicle', demoCase.vehicle],
             ['Concern', state.aftersales.serviceConcern]
           ])}
+          <div class="action-row summary-section-actions">
+            <groupui-button variant="secondary" type="button" data-action="edit-aftersales-context">Ändern</groupui-button>
+          </div>
         </section>
         <section>
           <groupui-tag>Angular</groupui-tag>
@@ -1119,6 +1135,9 @@ function renderAftersalesJourney() {
             ['Date', appointment.date],
             ['Location', appointment.location]
           ])}
+          <div class="action-row summary-section-actions">
+            <groupui-button variant="secondary" type="button" data-action="open-aftersales-calendar">Ändern</groupui-button>
+          </div>
         </section>
         <section>
           <groupui-tag>Svelte</groupui-tag>
@@ -1128,6 +1147,9 @@ function renderAftersalesJourney() {
             ['Duration', `${selectedPackage.estimatedDurationMinutes} min`],
             ['Base price', `${selectedPackage.estimatedPrice} EUR`]
           ])}
+          <div class="action-row summary-section-actions">
+            <groupui-button variant="secondary" type="button" data-action="open-aftersales-packages">Ändern</groupui-button>
+          </div>
         </section>
         <section class="flight-summary-costs">
           <groupui-tag>Web Components</groupui-tag>
@@ -1138,10 +1160,12 @@ function renderAftersalesJourney() {
             ['Total extras', `${serviceExtras.totalPrice || 0} EUR`],
             ['Estimated total', `${totalPrice} EUR`]
           ])}
+          <div class="action-row summary-section-actions">
+            <groupui-button variant="secondary" type="button" data-action="open-aftersales-extras">Ändern</groupui-button>
+          </div>
         </section>
       </div>
       <div class="action-row">
-        <groupui-button variant="secondary" type="button" data-action="open-aftersales-extras">Extras ändern</groupui-button>
         <groupui-button variant="secondary" type="button" data-action="reset-aftersales">Journey zurücksetzen</groupui-button>
       </div>
     `;
@@ -1182,7 +1206,7 @@ function renderAftersalesJourney() {
       `, 'aftersales-stepper-card')}
 
 
-      ${isInitialAftersalesStep ? `
+      ${(isInitialAftersalesStep || editingContext) ? `
         <div class="aftersales-workflow-layout aftersales-step1-layout">
           ${groupuiCard(`
               <groupui-tag class="${focusTagClass}">${focusTag}</groupui-tag>
@@ -1208,6 +1232,7 @@ function renderAftersalesJourney() {
           ${groupuiCard(`
               <groupui-tag class="${focusTagClass}">${focusTag}</groupui-tag>
               <groupui-headline heading="h3">${focusTitle}</groupui-headline>
+              ${focusPrimaryAction}
               <groupui-text>${focusDescription}</groupui-text>
               ${focusBody}
             `, 'aftersales-focus-card')}
@@ -2040,10 +2065,21 @@ function handleAction(action, sourceElement) {
     openFlightExtrasModal(aftersalesContextForStep('aftersales-extras-selection', integrationModes.modal, 'webcomponents-aftersales-extras-target'));
   }
 
+  if (action === 'edit-aftersales-context') {
+    state.aftersales.editContext = true;
+    render();
+  }
+
+  if (action === 'finish-aftersales-context-edit') {
+    state.aftersales.editContext = false;
+    render();
+  }
+
   if (action === 'reset-aftersales') {
     state.aftersales = {
       ...state.aftersales,
       currentStep: 1,
+      editContext: false,
       selectedAppointment: null,
       selectedPackage: null,
       serviceExtras: null

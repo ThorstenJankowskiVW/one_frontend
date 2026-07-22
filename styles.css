@@ -369,6 +369,7 @@ main > .view:first-child {
 .workflow-selection-block {
   display: grid;
   gap: 18px;
+  align-content: start;
 }
 
 .aftersales-pill-nowrap {
@@ -386,7 +387,7 @@ main > .view:first-child {
   white-space: nowrap;
   width: fit-content;
   justify-self: start;
-  margin-bottom: 6px;
+  margin-bottom: -10px;
   height: 22px;
   min-height: 22px;
   display: inline-flex;
@@ -657,6 +658,8 @@ main > .view:first-child {
 }
 
 .flight-summary-sections section {
+  display: flex;
+  flex-direction: column;
   padding: 18px;
   border: var(--groupui-sys-border-width-s) solid var(--groupui-sys-color-line-weak);
   border-radius: var(--groupui-sys-border-radius-s);
@@ -666,6 +669,12 @@ main > .view:first-child {
 .flight-summary-sections h4 {
   margin: 0 0 8px;
   font-size: 18px;
+}
+
+.summary-section-actions {
+  margin-top: auto;
+  padding-top: 14px;
+  justify-content: flex-end;
 }
 
 .flight-summary-costs {
