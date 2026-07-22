@@ -6,3 +6,4 @@ dist/
 
 # Zur Laufzeit vom Dev-Endpoint geschriebene Termin-Daten (aus Seed generiert)
 packages/appointment-store/src/appointments-data.json
+.DS_Store
